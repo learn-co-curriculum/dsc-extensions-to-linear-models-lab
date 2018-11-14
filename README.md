@@ -10,6 +10,7 @@ In this lab, you'll practice many concepts learned in this section, from adding 
 You will be able to:
 - Build a linear regression model with polynomial features/interactions
 - Perform regularization
+- Use AIC and BIC to select the best value for the regularization parameter
 
 
 ## Let's get started!
