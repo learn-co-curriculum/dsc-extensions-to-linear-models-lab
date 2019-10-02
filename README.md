@@ -208,7 +208,7 @@ polynom.groupby([0], sort=False)[2].max()
 
 Which two variables seem to benefit most from adding Polynomial terms?
 
-Add Polynomials for the two features that seem to benefit the most, as in have the best R squared compared to the baseline model. For each of the two feature, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
+Add Polynomials for the two features that seem to benefit the most, as in have the best R squared compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
 
 
 ```python
@@ -448,11 +448,6 @@ Read the page here: https://scikit-learn.org/stable/auto_examples/linear_model/p
 
 
 ```python
-
-```
-
-
-```python
 # __SOLUTION__ 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -490,12 +485,12 @@ plt.title('Information-criterion for model selection');
 ```
 
 
-![png](index_files/index_42_0.png)
+![png](index_files/index_41_0.png)
 
 
 ## Analyze the final result
 
-Finally, use the best value for regularization parameter according to AIC and BIC and compare the R squared parameters and MSE using train-test-split. Compare with the baseline model.
+Finally, use the best value for the regularization parameter according to AIC and BIC and compare the R squared parameters and MSE using train-test-split. Compare with the baseline model.
 
 
 ```python
