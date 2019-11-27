@@ -3,14 +3,13 @@
 
 ## Introduction
 
-In this lab, you'll practice many concepts learned in this section, from adding interactions and polynomials to your model to AIC and BIC!
+In this lab, you'll practice many concepts you have learned so far, from adding interactions and polynomials to your model to AIC and BIC!
 
 ## Summary
 
 You will be able to:
-- Build a linear regression model with polynomial features/interactions
-- Perform regularization
-- Use AIC and BIC to select the best value for the regularization parameter
+- Build a linear regression model with interactions and polynomial features 
+- Use AIC and BIC to select the best value for the regularization parameter 
 
 
 ## Let's get started!
@@ -28,52 +27,50 @@ warnings.filterwarnings('ignore')
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
-from sklearn import preprocessing
+from sklearn.preprocessing import scale
 
 from sklearn.datasets import load_boston
 ```
 
-## Look at a Baseline Boston Housing Data Model
+## Look at a baseline boston housing data model
 
-Import the Boston housing data set, use all the predictors in their scaled version (using `preprocessing.scale`. Look at a baseline model using *scaled variables* as predictors. Use 5-fold cross-validation this time and use the $R^2$ score to evaluate the model.
+- Import the Boston housing dataset 
+- Split the data into target (`y`) and predictors (`X`) -- ensure these both are DataFrames 
+- Scale all the predictors using `scale`. Convert these scaled features into a DataFrame 
+- Build at a baseline model using *scaled variables* as predictors. Use 5-fold cross-validation (set `random_state` to 1) and use the $R^2$ score to evaluate the model 
+
+
+```python
+boston = load_boston()
+
+y = pd.DataFrame(boston.target, columns=['target'])
+X = pd.DataFrame(boston.data, columns=boston.feature_names)
+
+X_scaled = scale(X)
+X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
+
+all_data = pd.concat([y, X_scaled], axis=1)
+```
 
 
 ```python
 regression = LinearRegression()
-boston = load_boston()
-```
-
-
-```python
-y = pd.DataFrame(boston.target,columns = ["target"])
-df = pd.DataFrame(boston.data, columns = boston.feature_names)
-
-X_scaled = preprocessing.scale(df)
-X_scaled = pd.DataFrame(X_scaled, columns = df.columns)
-
-all_data = pd.concat([y,X_scaled], axis = 1)
 
 crossvalidation = KFold(n_splits=5, shuffle=True, random_state=1)
-baseline = np.mean(cross_val_score(regression, X_scaled, y, scoring="r2", cv=crossvalidation))
-```
-
-
-```python
+baseline = np.mean(cross_val_score(regression, X_scaled, y, scoring='r2', cv=crossvalidation))
 baseline
 ```
 
 
 
 
-    0.7176324491383004
+    0.7176778617934925
 
 
 
 ## Include interactions
 
-Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Next, evaluate that model using 5-fold classification and store the $R^2$ to compare it with the baseline model.
-
-You've created code for this before in the interactions lab, yet this time, you have scaled the variables so the outcomes may look different. 
+Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Next, evaluate that model using 5-fold cross-validation and store the $R^2$ to compare it with the baseline model.
 
 Print the 7 most important interactions.
 
@@ -85,11 +82,11 @@ combinations = list(combinations(boston.feature_names, 2))
 interactions = []
 data = X_scaled.copy()
 for comb in combinations:
-    data["interaction"] = data[comb[0]] * data[comb[1]]
-    score = np.mean(cross_val_score(regression, data, y, scoring="r2", cv=crossvalidation))
-    if score > baseline: interactions.append((comb[0], comb[1], round(score,3)))
+    data['interaction'] = data[comb[0]] * data[comb[1]]
+    score = np.mean(cross_val_score(regression, data, y, scoring='r2', cv=crossvalidation))
+    if score > baseline: interactions.append((comb[0], comb[1], round(score, 3)))
             
-print("Top 7 interactions: %s" %sorted(interactions, key=lambda inter: inter[2], reverse=True)[:7])
+print('Top 7 interactions: %s' %sorted(interactions, key=lambda inter: inter[2], reverse=True)[:7])
 ```
 
     Top 7 interactions: [('RM', 'LSTAT', 0.783), ('RM', 'TAX', 0.775), ('RM', 'RAD', 0.77), ('RM', 'PTRATIO', 0.764), ('INDUS', 'RM', 0.757), ('NOX', 'RM', 0.746), ('RM', 'AGE', 0.742)]
@@ -102,28 +99,28 @@ Write code to include the 7 most important interactions in your data set by addi
 df_inter = X_scaled.copy()
 ls_interactions = sorted(interactions, key=lambda inter: inter[2], reverse=True)[:7]
 for inter in ls_interactions:
-    df_inter[inter[0]+"_"+inter[1]] =df[inter[0]]*df[inter[1]]
+    df_inter[inter[0] + '_' + inter[1]] = X[inter[0]] * X[inter[1]]
 ```
 
-## Include Polynomials
+## Include polynomials
 
-Try polynomials of 2, 3 and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
+Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
 
-`(var_name, degree, R2)`, so eg. `('DIS', 3, 0.732)`
+`(var_name, degree, R2)`, so eg. `('DIS', 3, 0.732)` 
 
 
 ```python
 from sklearn.preprocessing import PolynomialFeatures
 polynomials = []
-for col in df.columns:
-    for degree in [2,3,4]:
+for col in X.columns:
+    for degree in [2, 3, 4]:
         data = X_scaled.copy()
         poly = PolynomialFeatures(degree, include_bias=False)
-        X = poly.fit_transform(df[[col]])
-        data = pd.concat([data.drop(col, axis=1),pd.DataFrame(X)], axis = 1)
-        score = np.mean(cross_val_score(regression, data, y, scoring="r2", cv=crossvalidation))
-        if score > baseline: polynomials.append((col, degree, round(score,3)))
-print("Top 10 polynomials: %s" %sorted(polynomials, key=lambda poly: poly[2], reverse=True)[:10])
+        X_transformed = poly.fit_transform(X[[col]])
+        data = pd.concat([data.drop(col, axis=1),pd.DataFrame(X_transformed)], axis=1)
+        score = np.mean(cross_val_score(regression, data, y, scoring='r2', cv=crossvalidation))
+        if score > baseline: polynomials.append((col, degree, round(score, 3)))
+print('Top 10 polynomials: %s' %sorted(polynomials, key=lambda poly: poly[2], reverse=True)[:10])
 ```
 
     Top 10 polynomials: [('RM', 4, 0.8), ('RM', 2, 0.782), ('LSTAT', 4, 0.782), ('RM', 3, 0.781), ('LSTAT', 3, 0.774), ('LSTAT', 2, 0.772), ('DIS', 3, 0.737), ('DIS', 2, 0.732), ('DIS', 4, 0.731), ('TAX', 4, 0.724)]
@@ -143,12 +140,11 @@ polynom.groupby([0], sort=False)[2].max()
     0
     ZN         0.723
     INDUS      0.723
-    CHAS       0.718
     NOX        0.721
     RM         0.800
     AGE        0.722
     DIS        0.737
-    RAD        0.719
+    RAD        0.720
     TAX        0.724
     PTRATIO    0.721
     B          0.720
@@ -157,20 +153,20 @@ polynom.groupby([0], sort=False)[2].max()
 
 
 
-Which two variables seem to benefit most from adding Polynomial terms?
+Which two variables seem to benefit most from adding polynomial terms?
 
 Add Polynomials for the two features that seem to benefit the most, as in have the best R squared compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
 
 
 ```python
-for col in ["RM", "LSTAT"]:
+for col in ['RM', 'LSTAT']:
     poly = PolynomialFeatures(4, include_bias=False)
-    X = poly.fit_transform(df[[col]])
-    colnames= [col, col+"_"+"2", col+"_"+"3", col+"_"+"4"]
-    df_inter = pd.concat([df_inter.drop(col, axis=1),pd.DataFrame(X, columns=colnames)], axis = 1)
+    X_transformed = poly.fit_transform(X[[col]])
+    colnames= [col, col + '_' + '2',  col + '_' + '3', col + '_' + '4']
+    df_inter = pd.concat([df_inter.drop(col, axis=1), pd.DataFrame(X_transformed, columns=colnames)], axis=1)
 ```
 
-check out your final data set and make sure that your interaction terms as well as your polynomial terms are included.
+Check out your final data set and make sure that your interaction terms as well as your polynomial terms are included.
 
 
 ```python
@@ -224,7 +220,7 @@ df_inter.head()
   <tbody>
     <tr>
       <th>0</th>
-      <td>-0.417713</td>
+      <td>-0.419782</td>
       <td>0.284830</td>
       <td>-1.287909</td>
       <td>-0.272599</td>
@@ -248,7 +244,7 @@ df_inter.head()
     </tr>
     <tr>
       <th>1</th>
-      <td>-0.415269</td>
+      <td>-0.417339</td>
       <td>-0.487722</td>
       <td>-0.593381</td>
       <td>-0.272599</td>
@@ -272,7 +268,7 @@ df_inter.head()
     </tr>
     <tr>
       <th>2</th>
-      <td>-0.415272</td>
+      <td>-0.417342</td>
       <td>-0.487722</td>
       <td>-0.593381</td>
       <td>-0.272599</td>
@@ -296,7 +292,7 @@ df_inter.head()
     </tr>
     <tr>
       <th>3</th>
-      <td>-0.414680</td>
+      <td>-0.416750</td>
       <td>-0.487722</td>
       <td>-1.306878</td>
       <td>-0.272599</td>
@@ -320,7 +316,7 @@ df_inter.head()
     </tr>
     <tr>
       <th>4</th>
-      <td>-0.410409</td>
+      <td>-0.412482</td>
       <td>-0.487722</td>
       <td>-1.306878</td>
       <td>-0.272599</td>
@@ -355,22 +351,22 @@ Check out the R-squared of the full model.
 
 
 ```python
-full_model = np.mean(cross_val_score(regression, df_inter, y, scoring="r2", cv=crossvalidation))
+full_model = np.mean(cross_val_score(regression, df_inter, y, scoring='r2', cv=crossvalidation))
 full_model
 ```
 
 
 
 
-    0.806111648923695
+    0.8061549447223412
 
 
 
-## Finding the best Lasso regularization parameter
+## Find the best Lasso regularization parameter
 
-You've learned that, when using Lasso regularization, your coefficients shrink to 0 when using a higher regularization parameter. Now the question is which value we should choose for the regularization parameter. 
+You learned that when using Lasso regularization, your coefficients shrink to 0 when using a higher regularization parameter. Now the question is which value we should choose for the regularization parameter. 
 
-This is where the AIC and BIC come in handy! We'll use both criteria in what follows and perform cross-validation to select an optimal value of the regularization parameter alpha of the Lasso estimator.
+This is where the AIC and BIC come in handy! We'll use both criteria in what follows and perform cross-validation to select an optimal value of the regularization parameter $alpha$ of the Lasso estimator.
 
 Read the page here: https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html and create a similar plot as the first one listed on the page. 
 
@@ -411,79 +407,95 @@ plt.title('Information-criterion for model selection');
 ```
 
 
-![png](index_files/index_31_0.png)
+![png](index_files/index_30_0.png)
 
 
 ## Analyze the final result
 
-Finally, use the best value for the regularization parameter according to AIC and BIC and compare the R squared parameters and MSE using train-test-split. Compare with the baseline model.
+Finally, use the best value for the regularization parameter according to AIC and BIC, and compare R-squared and MSE using train-test split. Compare with the baseline model.
 
 
 ```python
 from sklearn.metrics import mean_squared_error, mean_squared_log_error
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import Lasso
+```
 
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y)
 
+```python
+# Split X_scaled and y into training and test sets
+# Set random_state to 1
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, random_state=1)
+
+# Code for baseline model
 linreg_all = LinearRegression()
 linreg_all.fit(X_train, y_train)
+
+# Print R2 and MSE
 print('Training r^2:', linreg_all.score(X_train, y_train))
-print('Testing r^2:', linreg_all.score(X_test, y_test))
+print('Test r^2:', linreg_all.score(X_test, y_test))
 print('Training MSE:', mean_squared_error(y_train, linreg_all.predict(X_train)))
-print('Testing MSE:', mean_squared_error(y_test, linreg_all.predict(X_test)))
+print('Test MSE:', mean_squared_error(y_test, linreg_all.predict(X_test)))
 ```
 
-    Training r^2: 0.7334406208400256
-    Testing r^2: 0.7527706535903199
-    Training MSE: 23.231400593561695
-    Testing MSE: 18.774808402767956
+    Training r^2: 0.7168057552393374
+    Test r^2: 0.7789410172622857
+    Training MSE: 22.477983821877896
+    Test MSE: 21.897765396049497
 
 
 
 ```python
-X_train, X_test, y_train, y_test = train_test_split(df_inter, y)
+# Split df_inter and y into training and test sets
+# Set random_state to 1
+X_train, X_test, y_train, y_test = train_test_split(df_inter, y, random_state=1)
 
+# Code for lasso with alpha from AIC
 lasso = Lasso(alpha= model_aic.alpha_) 
 lasso.fit(X_train, y_train)
+
+# Print R2 and MSE
 print('Training r^2:', lasso.score(X_train, y_train))
-print('Testing r^2:', lasso.score(X_test, y_test))
+print('Test r^2:', lasso.score(X_test, y_test))
 print('Training MSE:', mean_squared_error(y_train, lasso.predict(X_train)))
-print('Testing MSE:', mean_squared_error(y_test, lasso.predict(X_test)))
+print('Test MSE:', mean_squared_error(y_test, lasso.predict(X_test)))
 ```
 
-    Training r^2: 0.8320838639887773
-    Testing r^2: 0.8191982477609384
-    Training MSE: 14.137567915660638
-    Testing MSE: 15.221248329331507
+    Training r^2: 0.8155720603121368
+    Test r^2: 0.8648860563031305
+    Training MSE: 14.638603436696354
+    Test MSE: 13.384181018871182
 
 
 
 ```python
+# Code for lasso with alpha from BIC
 lasso = Lasso(alpha= model_bic.alpha_) 
 lasso.fit(X_train, y_train)
+
+# Print R2 and MSE
 print('Training r^2:', lasso.score(X_train, y_train))
-print('Testing r^2:', lasso.score(X_test, y_test))
+print('Test r^2:', lasso.score(X_test, y_test))
 print('Training MSE:', mean_squared_error(y_train, lasso.predict(X_train)))
-print('Testing MSE:', mean_squared_error(y_test, lasso.predict(X_test)))
+print('Test MSE:', mean_squared_error(y_test, lasso.predict(X_test)))
 ```
 
-    Training r^2: 0.828170474392439
-    Testing r^2: 0.8132387238490258
-    Training MSE: 14.467052696057063
-    Testing MSE: 15.722965775453758
+    Training r^2: 0.8074890577800761
+    Test r^2: 0.8775992537339207
+    Training MSE: 15.280175797396726
+    Test MSE: 12.124831087349015
 
 
-## Level Up - Optional
+## Level up (Optional)
 
-### Create a Lasso Path
+### Create a Lasso path
 
-From this section, you know that when using lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-Learn there is a function lasso_path which visualizes the shrinkage of the coefficients while alpha changes. Try this out yourself!
+From this section, you know that when using lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
 
 https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_coordinate_descent_path.html#sphx-glr-auto-examples-linear-model-plot-lasso-coordinate-descent-path-py
 
 ### AIC and BIC for subset selection
-This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Boston Housing data!
+This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Boston housing data!
 
 https://xavierbourretsicotte.github.io/subset_selection.html
 
