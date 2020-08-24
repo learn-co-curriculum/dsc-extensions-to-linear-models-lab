@@ -77,7 +77,7 @@ Print the 7 most important interactions.
 # Your code here
 ```
 
-Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2" with var1 and var2 the two variables in the interaction.
+Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2", where var1 and var2 are the two variables in the interaction.
 
 
 ```python
@@ -88,14 +88,14 @@ Write code to include the 7 most important interactions in your data set by addi
 
 Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
 
-`(var_name, degree, R2)`, so eg. `('DIS', 3, 0.732)` 
+`(var_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
 
 
 ```python
 # Your code here
 ```
 
-For each variable, print out the maximum R2 possible when including Polynomials.
+For each variable, print out the maximum $R^2$ possible when including Polynomials.
 
 
 ```python
@@ -104,7 +104,7 @@ For each variable, print out the maximum R2 possible when including Polynomials.
 
 Which two variables seem to benefit most from adding polynomial terms?
 
-Add Polynomials for the two features that seem to benefit the most, as in have the best R squared compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
+Add Polynomials for the two features that seem to benefit the most, as in have the best $R^2$ compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
 
 
 ```python
@@ -120,7 +120,7 @@ Check out your final data set and make sure that your interaction terms as well 
 
 ## Full model R-squared
 
-Check out the R-squared of the full model.
+Check out the $R^2$ of the full model.
 
 
 ```python
@@ -148,7 +148,7 @@ from sklearn.linear_model import Lasso, LassoCV, LassoLarsCV, LassoLarsIC
 
 ## Analyze the final result
 
-Finally, use the best value for the regularization parameter according to AIC and BIC, and compare R-squared and RMSE using train-test split. Compare with the baseline model.
+Finally, use the best value for the regularization parameter according to AIC and BIC, and compare $R^2$ and RMSE using train-test split. Compare with the baseline model.
 
 Remember, you can find the Root Mean Squared Error (RMSE) by setting `squared=False` inside the function (see [the documentation](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)), and the RMSE returns values that are in the same units as our target - so we can see how far off our predicted sale prices are in dollars.
 
@@ -168,7 +168,7 @@ X_train, X_test, y_train, y_test = None
 linreg_all = None
 
 
-# Print R2 and RMSE
+# Print R-Squared and RMSE
 
 ```
 
@@ -182,7 +182,7 @@ X_train, X_test, y_train, y_test = None
 lasso = None
 
 
-# Print R2 and RMSE
+# Print R-Squared and RMSE
 
 ```
 
@@ -192,7 +192,7 @@ lasso = None
 lasso = None
 
 
-# Print R2 and RMSE
+# Print R-Squared and RMSE
 
 ```
 
