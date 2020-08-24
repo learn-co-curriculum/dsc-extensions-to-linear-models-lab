@@ -106,7 +106,7 @@ print('Top 7 interactions: %s' %sorted(interactions, key=lambda inter: inter[2],
     Top 7 interactions: [('OverallQual', 'TotRmsAbvGrd', 0.77), ('OverallQual', 'GarageArea', 0.764), ('OverallQual', '2ndFlrSF', 0.758), ('2ndFlrSF', 'GrLivArea', 0.756), ('2ndFlrSF', 'TotRmsAbvGrd', 0.756), ('OverallQual', 'Fireplaces', 0.754), ('OverallCond', 'TotalBsmtSF', 0.754)]
 
 
-Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2" with var1 and var2 the two variables in the interaction.
+Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2", where var1 and var2 are the two variables in the interaction.
 
 
 ```python
@@ -120,7 +120,7 @@ for inter in ls_interactions:
 
 Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
 
-`(var_name, degree, R2)`, so eg. `('DIS', 3, 0.732)` 
+`(var_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
 
 
 ```python
@@ -139,7 +139,7 @@ print('Top 10 polynomials: %s' %sorted(polynomials, key=lambda poly: poly[2], re
     Top 10 polynomials: [('GrLivArea', 4, 0.807), ('GrLivArea', 3, 0.788), ('OverallQual', 2, 0.781), ('OverallQual', 3, 0.779), ('OverallQual', 4, 0.779), ('2ndFlrSF', 3, 0.775), ('2ndFlrSF', 2, 0.771), ('2ndFlrSF', 4, 0.771), ('GarageArea', 4, 0.767), ('GarageArea', 3, 0.758)]
 
 
-For each variable, print out the maximum R2 possible when including Polynomials.
+For each variable, print out the maximum $R^2$ possible when including Polynomials.
 
 
 ```python
@@ -163,7 +163,7 @@ polynom.groupby([0], sort=False)[2].max()
 
 Which two variables seem to benefit most from adding polynomial terms?
 
-Add Polynomials for the two features that seem to benefit the most, as in have the best R squared compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
+Add Polynomials for the two features that seem to benefit the most, as in have the best $R^2$ compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
 
 
 ```python
@@ -355,7 +355,7 @@ df_inter.head()
 
 ## Full model R-squared
 
-Check out the R-squared of the full model.
+Check out the $R^2$ of the full model.
 
 
 ```python
@@ -417,7 +417,7 @@ plt.title('Information-criterion for model selection');
 
 ## Analyze the final result
 
-Finally, use the best value for the regularization parameter according to AIC and BIC, and compare R-squared and RMSE using train-test split. Compare with the baseline model.
+Finally, use the best value for the regularization parameter according to AIC and BIC, and compare $R^2$ and RMSE using train-test split. Compare with the baseline model.
 
 Remember, you can find the Root Mean Squared Error (RMSE) by setting `squared=False` inside the function (see [the documentation](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)), and the RMSE returns values that are in the same units as our target - so we can see how far off our predicted sale prices are in dollars.
 
@@ -437,15 +437,15 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, random_state=1)
 linreg_all = LinearRegression()
 linreg_all.fit(X_train, y_train)
 
-# Print R2 and RMSE
-print('Training r^2:', linreg_all.score(X_train, y_train))
-print('Test r^2:', linreg_all.score(X_test, y_test))
+# Print R-Squared and RMSE
+print('Training R-Squared:', linreg_all.score(X_train, y_train))
+print('Test R-Squared:', linreg_all.score(X_test, y_test))
 print('Training RMSE:', mean_squared_error(y_train, linreg_all.predict(X_train), squared=False))
 print('Test RMSE:', mean_squared_error(y_test, linreg_all.predict(X_test), squared=False))
 ```
 
-    Training r^2: 0.7478270652928448
-    Test r^2: 0.8120708166668684
+    Training R-Squared: 0.7478270652928448
+    Test R-Squared: 0.8120708166668684
     Training RMSE: 39424.15590381302
     Test RMSE: 35519.17035590487
 
@@ -460,15 +460,15 @@ X_train, X_test, y_train, y_test = train_test_split(df_inter, y, random_state=1)
 lasso = Lasso(alpha= model_aic.alpha_) 
 lasso.fit(X_train, y_train)
 
-# Print R2 and RMSE
-print('Training r^2:', lasso.score(X_train, y_train))
-print('Test r^2:', lasso.score(X_test, y_test))
+# Print R-Squared and RMSE
+print('Training R-Squared:', lasso.score(X_train, y_train))
+print('Test R-Squared:', lasso.score(X_test, y_test))
 print('Training RMSE:', mean_squared_error(y_train, lasso.predict(X_train), squared=False))
 print('Test RMSE:', mean_squared_error(y_test, lasso.predict(X_test), squared=False))
 ```
 
-    Training r^2: 0.8446714993955369
-    Test r^2: 0.8657420069305382
+    Training R-Squared: 0.8446714993955369
+    Test R-Squared: 0.8657420069305382
     Training RMSE: 30941.3132234915
     Test RMSE: 30021.734184476485
 
@@ -479,15 +479,15 @@ print('Test RMSE:', mean_squared_error(y_test, lasso.predict(X_test), squared=Fa
 lasso = Lasso(alpha= model_bic.alpha_) 
 lasso.fit(X_train, y_train)
 
-# Print R2 and RMSE
-print('Training r^2:', lasso.score(X_train, y_train))
-print('Test r^2:', lasso.score(X_test, y_test))
+# Print R-Squared and RMSE
+print('Training R-Squared:', lasso.score(X_train, y_train))
+print('Test R-Squared:', lasso.score(X_test, y_test))
 print('Training RMSE:', mean_squared_error(y_train, lasso.predict(X_train), squared=False))
 print('Test RMSE:', mean_squared_error(y_test, lasso.predict(X_test), squared=False))
 ```
 
-    Training r^2: 0.8446487101363189
-    Test r^2: 0.8660207515757948
+    Training R-Squared: 0.8446487101363189
+    Test R-Squared: 0.8660207515757948
     Training RMSE: 30943.582941357854
     Test RMSE: 29990.55263037502
 
