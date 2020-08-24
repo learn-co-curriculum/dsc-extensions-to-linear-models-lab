@@ -23,18 +23,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
+from itertools import combinations
 
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import scale
-
-from sklearn.datasets import load_boston
+from sklearn.preprocessing import PolynomialFeatures
 ```
 
-## Look at a baseline boston housing data model
+Load the data.
 
-- Import the Boston housing dataset 
+
+```python
+df = pd.read_csv("ames.csv")
+```
+
+
+```python
+df = df[['LotArea', 'OverallQual', 'OverallCond', 'TotalBsmtSF',
+         '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'TotRmsAbvGrd',
+         'GarageArea', 'Fireplaces', 'SalePrice']]
+```
+
+## Look at a baseline housing data model
+
+Above, we imported the Ames housing data and grabbed a subset of the data to use in this analysis.
+
+Next steps:
+
 - Split the data into target (`y`) and predictors (`X`) -- ensure these both are DataFrames 
 - Scale all the predictors using `scale`. Convert these scaled features into a DataFrame 
 - Build at a baseline model using *scaled variables* as predictors. Use 5-fold cross-validation (set `random_state` to 1) and use the $R^2$ score to evaluate the model 
@@ -120,10 +137,7 @@ Read the page here: https://scikit-learn.org/stable/auto_examples/linear_model/p
 
 
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-
-from sklearn.linear_model import LassoCV, LassoLarsCV, LassoLarsIC
+from sklearn.linear_model import Lasso, LassoCV, LassoLarsCV, LassoLarsIC
 ```
 
 
@@ -134,13 +148,14 @@ from sklearn.linear_model import LassoCV, LassoLarsCV, LassoLarsIC
 
 ## Analyze the final result
 
-Finally, use the best value for the regularization parameter according to AIC and BIC, and compare R-squared and MSE using train-test split. Compare with the baseline model.
+Finally, use the best value for the regularization parameter according to AIC and BIC, and compare R-squared and RMSE using train-test split. Compare with the baseline model.
+
+Remember, you can find the Root Mean Squared Error (RMSE) by setting `squared=False` inside the function (see [the documentation](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)), and the RMSE returns values that are in the same units as our target - so we can see how far off our predicted sale prices are in dollars.
 
 
 ```python
 from sklearn.metrics import mean_squared_error, mean_squared_log_error
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import Lasso
 ```
 
 
@@ -153,7 +168,7 @@ X_train, X_test, y_train, y_test = None
 linreg_all = None
 
 
-# Print R2 and MSE
+# Print R2 and RMSE
 
 ```
 
@@ -167,7 +182,7 @@ X_train, X_test, y_train, y_test = None
 lasso = None
 
 
-# Print R2 and MSE
+# Print R2 and RMSE
 
 ```
 
@@ -177,7 +192,7 @@ lasso = None
 lasso = None
 
 
-# Print R2 and MSE
+# Print R2 and RMSE
 
 ```
 
@@ -185,12 +200,12 @@ lasso = None
 
 ### Create a Lasso path
 
-From this section, you know that when using lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
+From this section, you know that when using Lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
 
 https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_coordinate_descent_path.html#sphx-glr-auto-examples-linear-model-plot-lasso-coordinate-descent-path-py
 
 ### AIC and BIC for subset selection
-This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Boston housing data!
+This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Ames housing data!
 
 https://xavierbourretsicotte.github.io/subset_selection.html
 
