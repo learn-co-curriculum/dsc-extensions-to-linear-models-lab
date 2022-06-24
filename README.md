@@ -1,23 +1,24 @@
-
 # Extensions to Linear Models - Lab
 
 ## Introduction
 
-In this lab, you'll practice many concepts you have learned so far, from adding interactions and polynomials to your model to AIC and BIC!
+In this lab, you'll practice many concepts you have learned so far, from adding interactions and polynomials to your model to regularization!
 
 ## Summary
 
 You will be able to:
+
 - Build a linear regression model with interactions and polynomial features 
-- Use AIC and BIC to select the best value for the regularization parameter 
+- Use feature selection to obtain the optimal subset of features in a dataset
 
+## Let's Get Started!
 
-## Let's get started!
-
-Import all the necessary packages.
+Below we import all the necessary packages for this lab.
 
 
 ```python
+# Run this cell without changes
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,90 +26,180 @@ import warnings
 warnings.filterwarnings('ignore')
 from itertools import combinations
 
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import scale
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LinearRegression, Lasso
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 ```
 
 Load the data.
 
 
 ```python
+# Run this cell without changes
+
+# Load data from CSV
 df = pd.read_csv("ames.csv")
-```
-
-
-```python
+# Subset columns
 df = df[['LotArea', 'OverallQual', 'OverallCond', 'TotalBsmtSF',
          '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'TotRmsAbvGrd',
          'GarageArea', 'Fireplaces', 'SalePrice']]
+
+# Split the data into X and y
+y = df['SalePrice']
+X = df.drop(columns='SalePrice')
+
+# Split into train, test, and validation sets
+X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, random_state=0)
 ```
 
-## Look at a baseline housing data model
+## Build a Baseline Housing Data Model
 
 Above, we imported the Ames housing data and grabbed a subset of the data to use in this analysis.
 
 Next steps:
 
-- Split the data into target (`y`) and predictors (`X`) -- ensure these both are DataFrames 
-- Scale all the predictors using `scale`. Convert these scaled features into a DataFrame 
-- Build at a baseline model using *scaled variables* as predictors. Use 5-fold cross-validation (set `random_state` to 1) and use the $R^2$ score to evaluate the model 
+- Scale all the predictors using `StandardScaler`, then convert these scaled features back into DataFrame objects
+- Build a baseline `LinearRegression` model using *scaled variables* as predictors and use the $R^2$ score to evaluate the model 
 
 
 ```python
 # Your code here
+
+# Scale X_train and X_test using StandardScaler
+
+# Ensure X_train and X_test are scaled DataFrames
+# (hint: you can set the columns using X.columns)
+
 ```
-
-
-```python
-
-```
-
-## Include interactions
-
-Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Next, evaluate that model using 5-fold cross-validation and store the $R^2$ to compare it with the baseline model.
-
-Print the 7 most important interactions.
 
 
 ```python
 # Your code here
+
+# Create a LinearRegression model and fit it on scaled training data
+
+# Calculate a baseline r-squared score on training data
+
 ```
 
-Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2", where var1 and var2 are the two variables in the interaction.
+## Add Interactions
+
+Instead of adding all possible interaction terms, let's try a custom technique. We are only going to add the interaction terms that increase the $R^2$ score as much as possible. Specifically we are going to look for the 7 interaction terms that each cause the most increase in the coefficient of determination.
+
+### Find the Best Interactions
+
+Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Create a data structure that stores the pair of columns used as well as the $R^2$ score for each combination.
+
+***Hint:*** We have imported the `combinations` function from `itertools` for you ([documentation here](https://docs.python.org/3/library/itertools.html#itertools.combinations)). Try applying this to the columns of `X_train` to find all of the possible pairs.
+
+Print the 7 interactions that result in the highest $R^2$ scores.
 
 
 ```python
 # Your code here
+
+# Set up data structure
+
+
+# Find combinations of columns and loop over them
+
+    # Make copies of X_train and X_test
+    
+    
+    # Add interaction term to data
+
+    
+    # Find r-squared score (fit on training data, evaluate on test data)
+
+    
+    # Append to data structure
+    
+    
+# Sort and subset the data structure to find the top 7
+
 ```
 
-## Include polynomials
+### Add the Best Interactions
 
-Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
-
-`(var_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
+Write code to include the 7 most important interactions in `X_train` and `X_test` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
 
 
 ```python
 # Your code here
+
+# Loop over top 7 interactions
+
+    # Extract column names from data structure
+
+    # Construct new column name
+    
+    # Add new column to X_train and X_test
+
 ```
 
-For each variable, print out the maximum $R^2$ possible when including Polynomials.
+## Add Polynomials
+
+Now let's repeat that process for adding polynomial terms.
+
+### Find the Best Polynomials
+
+Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of degree 4 with `PolynomialFeatures`, the particular column is raised to the power of 2 and 3 as well in other terms.
+
+We only want to include "pure" polynomials, so make sure no interactions are included.
+
+Once again you should make a data structure that contains the values you have tested. We recommend a list of tuples of the form:
+
+`(col_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
 
 
 ```python
 # Your code here
+
+# Set up data structure
+
+# Loop over all columns
+
+    # Loop over degrees 2, 3, 4
+        
+        # Make a copy of X_train and X_test
+    
+        # Instantiate PolynomialFeatures with relevant degree
+        
+        # Fit polynomial to column and transform column
+        # Hint: use the notation df[[column_name]] to get the right shape
+        # Hint: convert the result to a DataFrame
+        
+        # Add polynomial to data
+        # Hint: use pd.concat since you're combining two DataFrames
+        # Hint: drop the column before combining so it doesn't appear twice
+    
+        # Find r-squared score
+    
+        # Append to data structure
+
+# Sort and subset the data structure to find the top 7
+
 ```
 
-Which two variables seem to benefit most from adding polynomial terms?
+### Add the Best Polynomials
 
-Add Polynomials for the two features that seem to benefit the most, as in have the best $R^2$ compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
+If there are duplicate column values in the results above, don't add multiple of them to the model, to avoid creating duplicate columns. (For example, if column `A` appeared in your list as both a 2nd and 3rd degree polynomial, adding both would result in `A` squared being added to the features twice.) Just add in the polynomial that results in the highest R-Squared.
 
 
 ```python
 # Your code here
+
+# Filter out duplicates
+
+# Loop over remaining results
+
+    # Create polynomial terms
+    
+    # Concat new polynomials to X_train and X_test
+    
 ```
 
 Check out your final data set and make sure that your interaction terms as well as your polynomial terms are included.
@@ -118,97 +209,78 @@ Check out your final data set and make sure that your interaction terms as well 
 # Your code here
 ```
 
-## Full model R-squared
+## Full Model R-Squared
 
-Check out the $R^2$ of the full model.
+Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and test data.
 
 
 ```python
 # Your code here
 ```
 
-## Find the best Lasso regularization parameter
+It looks like we may be overfitting some now. Let's try some feature selection techniques.
 
-You learned that when using Lasso regularization, your coefficients shrink to 0 when using a higher regularization parameter. Now the question is which value we should choose for the regularization parameter. 
+## Feature Selection
 
-This is where the AIC and BIC come in handy! We'll use both criteria in what follows and perform cross-validation to select an optimal value of the regularization parameter $alpha$ of the Lasso estimator.
-
-Read the page here: https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html and create a similar plot as the first one listed on the page. 
+First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and test $R^2$ score and how many features remain.
 
 
 ```python
-from sklearn.linear_model import Lasso, LassoCV, LassoLarsCV, LassoLarsIC
+# Your code here
+
 ```
+
+Now test out `Lasso` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)) with several different `alpha` values.
 
 
 ```python
-# Your code here 
+# Your code here
 
 ```
 
-## Analyze the final result
-
-Finally, use the best value for the regularization parameter according to AIC and BIC, and compare $R^2$ and RMSE using train-test split. Compare with the baseline model.
-
-Remember, you can find the Root Mean Squared Error (RMSE) by setting `squared=False` inside the function (see [the documentation](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)), and the RMSE returns values that are in the same units as our target - so we can see how far off our predicted sale prices are in dollars.
+Compare the results. Which features would you choose to use?
 
 
 ```python
-from sklearn.metrics import mean_squared_error, mean_squared_log_error
-from sklearn.model_selection import train_test_split
+# Your written answer here
 ```
+
+## Evaluate Final Model on Validation Data
+
+### Data Preparation
+
+At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the same way that `X_train` and `X_test` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
 
 
 ```python
-# Split X_scaled and y into training and test sets
-# Set random_state to 1
-X_train, X_test, y_train, y_test = None
-
-# Code for baseline model
-linreg_all = None
-
-
-# Print R-Squared and RMSE
+# Your code here
 
 ```
+
+### Evaluation
+
+Using either `RFE` or `Lasso`, fit a model on the complete train + test set, then find R-Squared and MSE values for the validation set.
 
 
 ```python
-# Split df_inter and y into training and test sets
-# Set random_state to 1
-X_train, X_test, y_train, y_test = None
-
-# Code for lasso with alpha from AIC
-lasso = None
-
-
-# Print R-Squared and RMSE
+# Your code here
 
 ```
 
+## Level Up Ideas (Optional)
 
-```python
-# Code for lasso with alpha from BIC
-lasso = None
+### Create a Lasso Path
 
-
-# Print R-Squared and RMSE
-
-```
-
-## Level up (Optional)
-
-### Create a Lasso path
-
-From this section, you know that when using Lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
+From this section, you know that when using `Lasso`, more parameters shrink to zero as your regularization parameter goes up. In scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
 
 https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_coordinate_descent_path.html#sphx-glr-auto-examples-linear-model-plot-lasso-coordinate-descent-path-py
 
-### AIC and BIC for subset selection
+### AIC and BIC for Subset Selection
+
 This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Ames housing data!
 
 https://xavierbourretsicotte.github.io/subset_selection.html
 
 ## Summary
 
-Congratulations! You now know how to create better linear models and how to use AIC and BIC for both feature selection and to optimize your regularization parameter when performing Ridge and Lasso. 
+Congratulations! You now know how apply concepts of bias-variance tradeoff using extensions to linear models and feature selection.
