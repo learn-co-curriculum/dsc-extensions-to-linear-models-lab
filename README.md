@@ -1,20 +1,19 @@
-
 # Extensions to Linear Models - Lab
 
 ## Introduction
 
-In this lab, you'll practice many concepts you have learned so far, from adding interactions and polynomials to your model to AIC and BIC!
+In this lab, you'll practice many concepts you have learned so far, from adding interactions and polynomials to your model to regularization!
 
 ## Summary
 
 You will be able to:
+
 - Build a linear regression model with interactions and polynomial features 
-- Use AIC and BIC to select the best value for the regularization parameter 
+- Use feature selection to obtain the optimal subset of features in a dataset
 
+## Let's Get Started!
 
-## Let's get started!
-
-Import all the necessary packages.
+Below we import all the necessary packages for this lab.
 
 
 ```python
@@ -25,160 +24,831 @@ import warnings
 warnings.filterwarnings('ignore')
 from itertools import combinations
 
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import scale
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LinearRegression, Lasso
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 ```
 
 Load the data.
 
 
 ```python
+
+# Load data from CSV
 df = pd.read_csv("ames.csv")
-```
-
-
-```python
+# Subset columns
 df = df[['LotArea', 'OverallQual', 'OverallCond', 'TotalBsmtSF',
          '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'TotRmsAbvGrd',
          'GarageArea', 'Fireplaces', 'SalePrice']]
+
+# Split the data into X and y
+y = df['SalePrice']
+X = df.drop(columns='SalePrice')
+
+# Split into train, test, and validation sets
+X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, random_state=0)
 ```
 
-## Look at a baseline housing data model
+## Build a Baseline Housing Data Model
 
 Above, we imported the Ames housing data and grabbed a subset of the data to use in this analysis.
 
 Next steps:
 
-- Split the data into target (`y`) and predictors (`X`) -- ensure these both are DataFrames 
-- Scale all the predictors using `scale`. Convert these scaled features into a DataFrame 
-- Build at a baseline model using *scaled variables* as predictors. Use 5-fold cross-validation (set `random_state` to 1) and use the $R^2$ score to evaluate the model 
+- Scale all the predictors using `StandardScaler`, then convert these scaled features back into DataFrame objects
+- Build a baseline `LinearRegression` model using *scaled variables* as predictors and use the $R^2$ score to evaluate the model 
 
 
 ```python
-y = df[['SalePrice']]
-X = df.drop(columns='SalePrice')
 
-X_scaled = scale(X)
-X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
+# Scale X_train and X_test using StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-all_data = pd.concat([y, X_scaled], axis=1)
+# Ensure X_train and X_test are scaled DataFrames
+# (hint: you can set the columns using X.columns)
+X_train = pd.DataFrame(X_train_scaled, columns=X.columns)
+X_test = pd.DataFrame(X_test_scaled, columns=X.columns)
+
+X_train
 ```
 
 
-```python
-regression = LinearRegression()
 
-crossvalidation = KFold(n_splits=5, shuffle=True, random_state=1)
-baseline = np.mean(cross_val_score(regression, X_scaled, y, scoring='r2', cv=crossvalidation))
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotArea</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>TotalBsmtSF</th>
+      <th>1stFlrSF</th>
+      <th>2ndFlrSF</th>
+      <th>GrLivArea</th>
+      <th>TotRmsAbvGrd</th>
+      <th>GarageArea</th>
+      <th>Fireplaces</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.114710</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>-0.639316</td>
+      <td>-0.804789</td>
+      <td>1.261552</td>
+      <td>0.499114</td>
+      <td>0.250689</td>
+      <td>0.327629</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-0.176719</td>
+      <td>0.632038</td>
+      <td>-0.509252</td>
+      <td>0.838208</td>
+      <td>0.641608</td>
+      <td>-0.808132</td>
+      <td>-0.247249</td>
+      <td>-0.365525</td>
+      <td>0.079146</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.246336</td>
+      <td>-0.831723</td>
+      <td>1.304613</td>
+      <td>-0.012560</td>
+      <td>-0.329000</td>
+      <td>-0.808132</td>
+      <td>-0.944766</td>
+      <td>-0.981739</td>
+      <td>-1.105931</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.378617</td>
+      <td>-0.831723</td>
+      <td>1.304613</td>
+      <td>-0.339045</td>
+      <td>-0.609036</td>
+      <td>-0.808132</td>
+      <td>-1.146010</td>
+      <td>-0.981739</td>
+      <td>-1.134602</td>
+      <td>0.588023</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-0.010898</td>
+      <td>-1.563603</td>
+      <td>1.304613</td>
+      <td>-2.531499</td>
+      <td>-1.315922</td>
+      <td>0.550523</td>
+      <td>-0.481708</td>
+      <td>0.250689</td>
+      <td>-2.281450</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>816</th>
+      <td>-0.532331</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>-0.510628</td>
+      <td>-0.897228</td>
+      <td>-0.808132</td>
+      <td>-1.353116</td>
+      <td>-2.214167</td>
+      <td>-0.274466</td>
+      <td>0.588023</td>
+    </tr>
+    <tr>
+      <th>817</th>
+      <td>-0.309245</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>0.514106</td>
+      <td>0.315353</td>
+      <td>-0.808132</td>
+      <td>-0.481708</td>
+      <td>-0.365525</td>
+      <td>0.088703</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>818</th>
+      <td>0.119419</td>
+      <td>0.632038</td>
+      <td>-0.509252</td>
+      <td>-0.513011</td>
+      <td>-0.899947</td>
+      <td>1.684999</td>
+      <td>0.796096</td>
+      <td>0.866903</td>
+      <td>-0.207566</td>
+      <td>0.588023</td>
+    </tr>
+    <tr>
+      <th>819</th>
+      <td>-0.002718</td>
+      <td>-0.099842</td>
+      <td>1.304613</td>
+      <td>-0.889542</td>
+      <td>-1.329516</td>
+      <td>0.783758</td>
+      <td>-0.290233</td>
+      <td>-0.365525</td>
+      <td>-0.852668</td>
+      <td>-0.994820</td>
+    </tr>
+    <tr>
+      <th>820</th>
+      <td>0.086287</td>
+      <td>-0.099842</td>
+      <td>0.397681</td>
+      <td>0.433080</td>
+      <td>0.179414</td>
+      <td>-0.808132</td>
+      <td>-0.579400</td>
+      <td>-0.365525</td>
+      <td>-0.675863</td>
+      <td>2.170867</td>
+    </tr>
+  </tbody>
+</table>
+<p>821 rows × 10 columns</p>
+</div>
+
+
+
+
+```python
+
+# Create a LinearRegression model and fit it on scaled training data
+regression = LinearRegression()
+regression.fit(X_train, y_train)
+
+# Calculate a baseline r-squared score on training data
+baseline = regression.score(X_train, y_train)
 baseline
 ```
 
 
 
 
-    0.7524751004088885
+    0.7868344817421309
 
 
 
-## Include interactions
+## Add Interactions
 
-Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Next, evaluate that model using 5-fold cross-validation and store the $R^2$ to compare it with the baseline model.
+Instead of adding all possible interaction terms, let's try a custom technique. We are only going to add the interaction terms that increase the $R^2$ score as much as possible. Specifically we are going to look for the 7 interaction terms that each cause the most increase in the coefficient of determination.
 
-Print the 7 most important interactions.
+### Find the Best Interactions
+
+Look at all the possible combinations of variables for interactions by adding interactions one by one to the baseline model. Create a data structure that stores the pair of columns used as well as the $R^2$ score for each combination.
+
+***Hint:*** We have imported the `combinations` function from `itertools` for you ([documentation here](https://docs.python.org/3/library/itertools.html#itertools.combinations)). Try applying this to the columns of `X_train` to find all of the possible pairs.
+
+Print the 7 interactions that result in the highest $R^2$ scores.
 
 
 ```python
-combinations = list(combinations(X.columns, 2))
 
+# Set up data structure
+# (Here we are using a list of tuples, but you could use a dictionary,
+# a list of lists, some other structure. Whatever makes sense to you.)
 interactions = []
-data = X_scaled.copy()
-for comb in combinations:
-    data['interaction'] = data[comb[0]] * data[comb[1]]
-    score = np.mean(cross_val_score(regression, data, y, scoring='r2', cv=crossvalidation))
-    if score > baseline: interactions.append((comb[0], comb[1], round(score, 3)))
-            
-print('Top 7 interactions: %s' %sorted(interactions, key=lambda inter: inter[2], reverse=True)[:7])
+
+# Find combinations of columns and loop over them
+column_pairs = list(combinations(X_train.columns, 2))
+for (col1, col2) in column_pairs:
+    # Make copies of X_train and X_test
+    features_train = X_train.copy()
+    features_test = X_test.copy()
+    
+    # Add interaction term to data
+    features_train["interaction"] = features_train[col1] * features_train[col2]
+    features_test["interaction"] = features_test[col1] * features_test[col2]
+    
+    # Find r-squared score (fit on training data, evaluate on test data)
+    score = LinearRegression().fit(features_train, y_train).score(features_test, y_test)
+    
+    # Append to data structure
+    interactions.append(((col1, col2), score))
+
+# Sort and subset the data structure to find the top 7
+top_7_interactions = sorted(interactions, key=lambda record: record[1], reverse=True)[:7]
+print("Top 7 interactions:")
+print(top_7_interactions)
 ```
 
-    Top 7 interactions: [('OverallQual', 'TotRmsAbvGrd', 0.77), ('OverallQual', 'GarageArea', 0.764), ('OverallQual', '2ndFlrSF', 0.758), ('2ndFlrSF', 'GrLivArea', 0.756), ('2ndFlrSF', 'TotRmsAbvGrd', 0.756), ('OverallQual', 'Fireplaces', 0.754), ('OverallCond', 'TotalBsmtSF', 0.754)]
+    Top 7 interactions:
+    [(('LotArea', '1stFlrSF'), 0.7211105666140574), (('LotArea', 'TotalBsmtSF'), 0.7071649207050104), (('LotArea', 'GrLivArea'), 0.6690980823779029), (('LotArea', 'Fireplaces'), 0.6529699515652587), (('2ndFlrSF', 'TotRmsAbvGrd'), 0.647299489040519), (('OverallCond', 'TotalBsmtSF'), 0.6429019879233769), (('OverallQual', '2ndFlrSF'), 0.6422324294284367)]
 
 
-Write code to include the 7 most important interactions in your data set by adding 7 columns. Name the columns "var1_var2", where var1 and var2 are the two variables in the interaction.
+### Add the Best Interactions
+
+Write code to include the 7 most important interactions in `X_train` and `X_test` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
 
 
 ```python
-df_inter = X_scaled.copy()
-ls_interactions = sorted(interactions, key=lambda inter: inter[2], reverse=True)[:7]
-for inter in ls_interactions:
-    df_inter[inter[0] + '_' + inter[1]] = X[inter[0]] * X[inter[1]]
+
+# Loop over top 7 interactions
+for record in top_7_interactions:
+    # Extract column names from data structure
+    col1, col2 = record[0]
+    
+    # Construct new column name
+    new_col_name = col1 + "_" + col2
+    
+    # Add new column to X_train and X_test
+    X_train[new_col_name] = X_train[col1] * X_train[col2]
+    X_test[new_col_name] = X_test[col1] * X_test[col2]
+    
+X_train
 ```
 
-## Include polynomials
 
-Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of 4, the particular column is raised to the power of 2 and 3 as well in other terms. We only want to include "pure" polynomials, so make sure no interactions are included. We want the result to return a list that contain tuples of the form:
 
-`(var_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotArea</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>TotalBsmtSF</th>
+      <th>1stFlrSF</th>
+      <th>2ndFlrSF</th>
+      <th>GrLivArea</th>
+      <th>TotRmsAbvGrd</th>
+      <th>GarageArea</th>
+      <th>Fireplaces</th>
+      <th>LotArea_1stFlrSF</th>
+      <th>LotArea_TotalBsmtSF</th>
+      <th>LotArea_GrLivArea</th>
+      <th>LotArea_Fireplaces</th>
+      <th>2ndFlrSF_TotRmsAbvGrd</th>
+      <th>OverallCond_TotalBsmtSF</th>
+      <th>OverallQual_2ndFlrSF</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.114710</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>-0.639316</td>
+      <td>-0.804789</td>
+      <td>1.261552</td>
+      <td>0.499114</td>
+      <td>0.250689</td>
+      <td>0.327629</td>
+      <td>-0.994820</td>
+      <td>0.092318</td>
+      <td>0.073336</td>
+      <td>-0.057254</td>
+      <td>0.114116</td>
+      <td>0.316257</td>
+      <td>0.325573</td>
+      <td>-0.125956</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-0.176719</td>
+      <td>0.632038</td>
+      <td>-0.509252</td>
+      <td>0.838208</td>
+      <td>0.641608</td>
+      <td>-0.808132</td>
+      <td>-0.247249</td>
+      <td>-0.365525</td>
+      <td>0.079146</td>
+      <td>-0.994820</td>
+      <td>-0.113385</td>
+      <td>-0.148128</td>
+      <td>0.043694</td>
+      <td>0.175804</td>
+      <td>0.295392</td>
+      <td>-0.426859</td>
+      <td>-0.510770</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.246336</td>
+      <td>-0.831723</td>
+      <td>1.304613</td>
+      <td>-0.012560</td>
+      <td>-0.329000</td>
+      <td>-0.808132</td>
+      <td>-0.944766</td>
+      <td>-0.981739</td>
+      <td>-1.105931</td>
+      <td>-0.994820</td>
+      <td>0.081045</td>
+      <td>0.003094</td>
+      <td>0.232730</td>
+      <td>0.245060</td>
+      <td>0.793375</td>
+      <td>-0.016386</td>
+      <td>0.672141</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.378617</td>
+      <td>-0.831723</td>
+      <td>1.304613</td>
+      <td>-0.339045</td>
+      <td>-0.609036</td>
+      <td>-0.808132</td>
+      <td>-1.146010</td>
+      <td>-0.981739</td>
+      <td>-1.134602</td>
+      <td>0.588023</td>
+      <td>0.230591</td>
+      <td>0.128368</td>
+      <td>0.433899</td>
+      <td>-0.222636</td>
+      <td>0.793375</td>
+      <td>-0.442323</td>
+      <td>0.672141</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-0.010898</td>
+      <td>-1.563603</td>
+      <td>1.304613</td>
+      <td>-2.531499</td>
+      <td>-1.315922</td>
+      <td>0.550523</td>
+      <td>-0.481708</td>
+      <td>0.250689</td>
+      <td>-2.281450</td>
+      <td>-0.994820</td>
+      <td>0.014341</td>
+      <td>0.027589</td>
+      <td>0.005250</td>
+      <td>0.010842</td>
+      <td>0.138010</td>
+      <td>-3.302627</td>
+      <td>-0.860799</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>816</th>
+      <td>-0.532331</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>-0.510628</td>
+      <td>-0.897228</td>
+      <td>-0.808132</td>
+      <td>-1.353116</td>
+      <td>-2.214167</td>
+      <td>-0.274466</td>
+      <td>0.588023</td>
+      <td>0.477622</td>
+      <td>0.271823</td>
+      <td>0.720306</td>
+      <td>-0.313023</td>
+      <td>1.789339</td>
+      <td>0.260039</td>
+      <td>0.080686</td>
+    </tr>
+    <tr>
+      <th>817</th>
+      <td>-0.309245</td>
+      <td>-0.099842</td>
+      <td>-0.509252</td>
+      <td>0.514106</td>
+      <td>0.315353</td>
+      <td>-0.808132</td>
+      <td>-0.481708</td>
+      <td>-0.365525</td>
+      <td>0.088703</td>
+      <td>-0.994820</td>
+      <td>-0.097522</td>
+      <td>-0.158985</td>
+      <td>0.148966</td>
+      <td>0.307643</td>
+      <td>0.295392</td>
+      <td>-0.261809</td>
+      <td>0.080686</td>
+    </tr>
+    <tr>
+      <th>818</th>
+      <td>0.119419</td>
+      <td>0.632038</td>
+      <td>-0.509252</td>
+      <td>-0.513011</td>
+      <td>-0.899947</td>
+      <td>1.684999</td>
+      <td>0.796096</td>
+      <td>0.866903</td>
+      <td>-0.207566</td>
+      <td>0.588023</td>
+      <td>-0.107471</td>
+      <td>-0.061263</td>
+      <td>0.095069</td>
+      <td>0.070221</td>
+      <td>1.460730</td>
+      <td>0.261252</td>
+      <td>1.064983</td>
+    </tr>
+    <tr>
+      <th>819</th>
+      <td>-0.002718</td>
+      <td>-0.099842</td>
+      <td>1.304613</td>
+      <td>-0.889542</td>
+      <td>-1.329516</td>
+      <td>0.783758</td>
+      <td>-0.290233</td>
+      <td>-0.365525</td>
+      <td>-0.852668</td>
+      <td>-0.994820</td>
+      <td>0.003613</td>
+      <td>0.002418</td>
+      <td>0.000789</td>
+      <td>0.002704</td>
+      <td>-0.286483</td>
+      <td>-1.160508</td>
+      <td>-0.078252</td>
+    </tr>
+    <tr>
+      <th>820</th>
+      <td>0.086287</td>
+      <td>-0.099842</td>
+      <td>0.397681</td>
+      <td>0.433080</td>
+      <td>0.179414</td>
+      <td>-0.808132</td>
+      <td>-0.579400</td>
+      <td>-0.365525</td>
+      <td>-0.675863</td>
+      <td>2.170867</td>
+      <td>0.015481</td>
+      <td>0.037369</td>
+      <td>-0.049995</td>
+      <td>0.187318</td>
+      <td>0.295392</td>
+      <td>0.172228</td>
+      <td>0.080686</td>
+    </tr>
+  </tbody>
+</table>
+<p>821 rows × 17 columns</p>
+</div>
+
+
+
+## Add Polynomials
+
+Now let's repeat that process for adding polynomial terms.
+
+### Find the Best Polynomials
+
+Try polynomials of degrees 2, 3, and 4 for each variable, in a similar way you did for interactions (by looking at your baseline model and seeing how $R^2$ increases). Do understand that when going for a polynomial of degree 4 with `PolynomialFeatures`, the particular column is raised to the power of 2 and 3 as well in other terms.
+
+We only want to include "pure" polynomials, so make sure no interactions are included.
+
+Once again you should make a data structure that contains the values you have tested. We recommend a list of tuples of the form:
+
+`(col_name, degree, R2)`, so eg. `('OverallQual', 2, 0.781)` 
 
 
 ```python
+
+# Set up data structure
 polynomials = []
-for col in X.columns:
-    for degree in [2, 3, 4]:
-        data = X_scaled.copy()
+
+# Loop over all columns
+for col in X_train.columns:
+    # Loop over degrees 2, 3, 4
+    for degree in (2, 3, 4):
+        
+        # Make a copy of X_train and X_test
+        features_train = X_train.copy().reset_index()
+        features_test = X_test.copy().reset_index()
+    
+        # Instantiate PolynomialFeatures with relevant degree
         poly = PolynomialFeatures(degree, include_bias=False)
-        X_transformed = poly.fit_transform(X[[col]])
-        data = pd.concat([data.drop(col, axis=1),pd.DataFrame(X_transformed)], axis=1)
-        score = np.mean(cross_val_score(regression, data, y, scoring='r2', cv=crossvalidation))
-        if score > baseline: polynomials.append((col, degree, round(score, 3)))
-print('Top 10 polynomials: %s' %sorted(polynomials, key=lambda poly: poly[2], reverse=True)[:10])
+        
+        # Fit polynomial to column and transform column
+        # Hint: use the notation df[[column_name]] to get the right shape
+        # Hint: convert the result to a DataFrame
+        col_transformed_train = pd.DataFrame(poly.fit_transform(features_train[[col]]))
+        col_transformed_test = pd.DataFrame(poly.transform(features_test[[col]]))
+        
+        # Add polynomial to data
+        # Hint: use pd.concat since you're combining two DataFrames
+        # Hint: drop the column before combining so it doesn't appear twice
+        features_train = pd.concat([features_train.drop(col, axis=1), col_transformed_train], axis=1)
+        features_test = pd.concat([features_test.drop(col, axis=1), col_transformed_test], axis=1)
+    
+        # Find r-squared score
+        score = LinearRegression().fit(features_train, y_train).score(features_test, y_test)
+    
+        # Append to data structure
+        polynomials.append((col, degree, score))
+    
+# Sort and subset the data structure to find the top 7
+top_7_polynomials = sorted(polynomials, key=lambda record: record[-1], reverse=True)[:7]
+print("Top 7 polynomials:")
+print(top_7_polynomials)
 ```
 
-    Top 10 polynomials: [('GrLivArea', 4, 0.807), ('GrLivArea', 3, 0.788), ('OverallQual', 2, 0.781), ('OverallQual', 3, 0.779), ('OverallQual', 4, 0.779), ('2ndFlrSF', 3, 0.775), ('2ndFlrSF', 2, 0.771), ('2ndFlrSF', 4, 0.771), ('GarageArea', 4, 0.767), ('GarageArea', 3, 0.758)]
+    Top 7 polynomials:
+    [('GrLivArea', 3, 0.8283186230750728), ('OverallQual_2ndFlrSF', 3, 0.8221477940922196), ('LotArea_Fireplaces', 4, 0.8124290394772224), ('LotArea_Fireplaces', 3, 0.8122028721735164), ('OverallQual', 3, 0.8068150958879932), ('OverallQual_2ndFlrSF', 2, 0.8057158750082858), ('OverallQual', 4, 0.8033460977380442)]
 
 
-For each variable, print out the maximum $R^2$ possible when including Polynomials.
+### Add the Best Polynomials
+
+If there are duplicate column values in the results above, don't add multiple of them to the model, to avoid creating duplicate columns. (For example, if column `A` appeared in your list as both a 2nd and 3rd degree polynomial, adding both would result in `A` squared being added to the features twice.) Just add in the polynomial that results in the highest R-Squared.
 
 
 ```python
-polynom = pd.DataFrame(polynomials)
-polynom.groupby([0], sort=False)[2].max()
+# Convert to DataFrame for easier manipulation
+top_polynomials = pd.DataFrame(top_7_polynomials, columns=["Column", "Degree", "R^2"])
+top_polynomials
 ```
 
 
 
 
-    0
-    OverallQual     0.781
-    OverallCond     0.753
-    2ndFlrSF        0.775
-    GrLivArea       0.807
-    TotRmsAbvGrd    0.753
-    GarageArea      0.767
-    Name: 2, dtype: float64
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column</th>
+      <th>Degree</th>
+      <th>R^2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>GrLivArea</td>
+      <td>3</td>
+      <td>0.828319</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>OverallQual_2ndFlrSF</td>
+      <td>3</td>
+      <td>0.822148</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>LotArea_Fireplaces</td>
+      <td>4</td>
+      <td>0.812429</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>LotArea_Fireplaces</td>
+      <td>3</td>
+      <td>0.812203</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>OverallQual</td>
+      <td>3</td>
+      <td>0.806815</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>OverallQual_2ndFlrSF</td>
+      <td>2</td>
+      <td>0.805716</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>OverallQual</td>
+      <td>4</td>
+      <td>0.803346</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 
-
-Which two variables seem to benefit most from adding polynomial terms?
-
-Add Polynomials for the two features that seem to benefit the most, as in have the best $R^2$ compared to the baseline model. For each of the two features, raise to the Polynomial that generates the best result. Make sure to start from the data set `df_inter` so the final data set has both interactions and polynomials in the model.
 
 
 ```python
-for col in ['OverallQual', 'GrLivArea']:
-    poly = PolynomialFeatures(4, include_bias=False)
-    X_transformed = poly.fit_transform(X[[col]])
-    colnames= [col, col + '_' + '2',  col + '_' + '3', col + '_' + '4']
-    df_inter = pd.concat([df_inter.drop(col, axis=1), pd.DataFrame(X_transformed, columns=colnames)], axis=1)
+# Drop duplicate columns
+top_polynomials.drop_duplicates(subset="Column", inplace=True)
+top_polynomials
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column</th>
+      <th>Degree</th>
+      <th>R^2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>GrLivArea</td>
+      <td>3</td>
+      <td>0.828319</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>OverallQual_2ndFlrSF</td>
+      <td>3</td>
+      <td>0.822148</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>LotArea_Fireplaces</td>
+      <td>4</td>
+      <td>0.812429</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>OverallQual</td>
+      <td>3</td>
+      <td>0.806815</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+```python
+
+# Loop over remaining results
+for (col, degree, _) in top_polynomials.values:
+    # Create polynomial terms
+    poly = PolynomialFeatures(degree, include_bias=False)
+    col_transformed_train = pd.DataFrame(poly.fit_transform(X_train[[col]]),
+                                        columns=poly.get_feature_names([col]))
+    col_transformed_test = pd.DataFrame(poly.transform(X_test[[col]]),
+                                    columns=poly.get_feature_names([col]))
+    # Concat new polynomials to X_train and X_test
+    X_train = pd.concat([X_train.drop(col, axis=1), col_transformed_train], axis=1)
+    X_test = pd.concat([X_test.drop(col, axis=1), col_transformed_test], axis=1)
+    
 ```
 
 Check out your final data set and make sure that your interaction terms as well as your polynomial terms are included.
 
 
 ```python
-df_inter.head()
+X_train.head()
 ```
 
 
@@ -210,301 +880,324 @@ df_inter.head()
       <th>TotRmsAbvGrd</th>
       <th>GarageArea</th>
       <th>Fireplaces</th>
-      <th>OverallQual_TotRmsAbvGrd</th>
-      <th>OverallQual_GarageArea</th>
+      <th>LotArea_1stFlrSF</th>
+      <th>LotArea_TotalBsmtSF</th>
       <th>...</th>
-      <th>OverallQual_Fireplaces</th>
-      <th>OverallCond_TotalBsmtSF</th>
+      <th>OverallQual_2ndFlrSF</th>
+      <th>OverallQual_2ndFlrSF^2</th>
+      <th>OverallQual_2ndFlrSF^3</th>
+      <th>LotArea_Fireplaces</th>
+      <th>LotArea_Fireplaces^2</th>
+      <th>LotArea_Fireplaces^3</th>
+      <th>LotArea_Fireplaces^4</th>
       <th>OverallQual</th>
-      <th>OverallQual_2</th>
-      <th>OverallQual_3</th>
-      <th>OverallQual_4</th>
-      <th>GrLivArea</th>
-      <th>GrLivArea_2</th>
-      <th>GrLivArea_3</th>
-      <th>GrLivArea_4</th>
+      <th>OverallQual^2</th>
+      <th>OverallQual^3</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>0</td>
-      <td>-0.207142</td>
-      <td>-0.517200</td>
-      <td>-0.459303</td>
-      <td>-0.793434</td>
-      <td>1.161852</td>
-      <td>0.912210</td>
-      <td>0.351000</td>
-      <td>-0.951226</td>
-      <td>56</td>
-      <td>3836</td>
+      <th>0</th>
+      <td>-0.114710</td>
+      <td>-0.509252</td>
+      <td>-0.639316</td>
+      <td>-0.804789</td>
+      <td>1.261552</td>
+      <td>0.250689</td>
+      <td>0.327629</td>
+      <td>-0.994820</td>
+      <td>0.092318</td>
+      <td>0.073336</td>
       <td>...</td>
-      <td>0</td>
-      <td>4280</td>
-      <td>7.0</td>
-      <td>49.0</td>
-      <td>343.0</td>
-      <td>2401.0</td>
-      <td>1710.0</td>
-      <td>2924100.0</td>
-      <td>5.000211e+09</td>
-      <td>8.550361e+12</td>
+      <td>-0.125956</td>
+      <td>0.015865</td>
+      <td>-0.001998</td>
+      <td>0.114116</td>
+      <td>0.013022</td>
+      <td>0.001486</td>
+      <td>1.695855e-04</td>
+      <td>-0.099842</td>
+      <td>0.009968</td>
+      <td>-0.000995</td>
     </tr>
     <tr>
-      <td>1</td>
-      <td>-0.091886</td>
-      <td>2.179628</td>
-      <td>0.466465</td>
-      <td>0.257140</td>
-      <td>-0.795163</td>
-      <td>-0.318683</td>
-      <td>-0.060731</td>
-      <td>0.600495</td>
-      <td>36</td>
-      <td>2760</td>
+      <th>1</th>
+      <td>-0.176719</td>
+      <td>-0.509252</td>
+      <td>0.838208</td>
+      <td>0.641608</td>
+      <td>-0.808132</td>
+      <td>-0.365525</td>
+      <td>0.079146</td>
+      <td>-0.994820</td>
+      <td>-0.113385</td>
+      <td>-0.148128</td>
       <td>...</td>
-      <td>6</td>
-      <td>10096</td>
-      <td>6.0</td>
-      <td>36.0</td>
-      <td>216.0</td>
-      <td>1296.0</td>
-      <td>1262.0</td>
-      <td>1592644.0</td>
-      <td>2.009917e+09</td>
-      <td>2.536515e+12</td>
+      <td>-0.510770</td>
+      <td>0.260886</td>
+      <td>-0.133253</td>
+      <td>0.175804</td>
+      <td>0.030907</td>
+      <td>0.005434</td>
+      <td>9.552459e-04</td>
+      <td>0.632038</td>
+      <td>0.399472</td>
+      <td>0.252481</td>
     </tr>
     <tr>
-      <td>2</td>
-      <td>0.073480</td>
-      <td>-0.517200</td>
-      <td>-0.313369</td>
-      <td>-0.627826</td>
-      <td>1.189351</td>
-      <td>-0.318683</td>
-      <td>0.631726</td>
-      <td>0.600495</td>
-      <td>42</td>
-      <td>4256</td>
+      <th>2</th>
+      <td>-0.246336</td>
+      <td>1.304613</td>
+      <td>-0.012560</td>
+      <td>-0.329000</td>
+      <td>-0.808132</td>
+      <td>-0.981739</td>
+      <td>-1.105931</td>
+      <td>-0.994820</td>
+      <td>0.081045</td>
+      <td>0.003094</td>
       <td>...</td>
-      <td>7</td>
-      <td>4600</td>
-      <td>7.0</td>
-      <td>49.0</td>
-      <td>343.0</td>
-      <td>2401.0</td>
-      <td>1786.0</td>
-      <td>3189796.0</td>
-      <td>5.696976e+09</td>
-      <td>1.017480e+13</td>
+      <td>0.672141</td>
+      <td>0.451774</td>
+      <td>0.303656</td>
+      <td>0.245060</td>
+      <td>0.060055</td>
+      <td>0.014717</td>
+      <td>3.606557e-03</td>
+      <td>-0.831723</td>
+      <td>0.691762</td>
+      <td>-0.575354</td>
     </tr>
     <tr>
-      <td>3</td>
-      <td>-0.096897</td>
-      <td>-0.517200</td>
-      <td>-0.687324</td>
-      <td>-0.521734</td>
-      <td>0.937276</td>
-      <td>0.296763</td>
-      <td>0.790804</td>
-      <td>0.600495</td>
-      <td>49</td>
-      <td>4494</td>
+      <th>3</th>
+      <td>-0.378617</td>
+      <td>1.304613</td>
+      <td>-0.339045</td>
+      <td>-0.609036</td>
+      <td>-0.808132</td>
+      <td>-0.981739</td>
+      <td>-1.134602</td>
+      <td>0.588023</td>
+      <td>0.230591</td>
+      <td>0.128368</td>
       <td>...</td>
-      <td>7</td>
-      <td>3780</td>
-      <td>7.0</td>
-      <td>49.0</td>
-      <td>343.0</td>
-      <td>2401.0</td>
-      <td>1717.0</td>
-      <td>2948089.0</td>
-      <td>5.061869e+09</td>
-      <td>8.691229e+12</td>
+      <td>0.672141</td>
+      <td>0.451774</td>
+      <td>0.303656</td>
+      <td>-0.222636</td>
+      <td>0.049567</td>
+      <td>-0.011035</td>
+      <td>2.456852e-03</td>
+      <td>-0.831723</td>
+      <td>0.691762</td>
+      <td>-0.575354</td>
     </tr>
     <tr>
-      <td>4</td>
-      <td>0.375148</td>
-      <td>-0.517200</td>
-      <td>0.199680</td>
-      <td>-0.045611</td>
-      <td>1.617877</td>
-      <td>1.527656</td>
-      <td>1.698485</td>
-      <td>0.600495</td>
-      <td>72</td>
-      <td>6688</td>
+      <th>4</th>
+      <td>-0.010898</td>
+      <td>1.304613</td>
+      <td>-2.531499</td>
+      <td>-1.315922</td>
+      <td>0.550523</td>
+      <td>0.250689</td>
+      <td>-2.281450</td>
+      <td>-0.994820</td>
+      <td>0.014341</td>
+      <td>0.027589</td>
       <td>...</td>
-      <td>8</td>
-      <td>5725</td>
-      <td>8.0</td>
-      <td>64.0</td>
-      <td>512.0</td>
-      <td>4096.0</td>
-      <td>2198.0</td>
-      <td>4831204.0</td>
-      <td>1.061899e+10</td>
-      <td>2.334053e+13</td>
+      <td>-0.860799</td>
+      <td>0.740974</td>
+      <td>-0.637829</td>
+      <td>0.010842</td>
+      <td>0.000118</td>
+      <td>0.000001</td>
+      <td>1.381725e-08</td>
+      <td>-1.563603</td>
+      <td>2.444854</td>
+      <td>-3.822780</td>
     </tr>
   </tbody>
 </table>
-<p>5 rows × 23 columns</p>
+<p>5 rows × 26 columns</p>
 </div>
 
 
 
-## Full model R-squared
+## Full Model R-Squared
 
-Check out the $R^2$ of the full model.
-
-
-```python
-full_model = np.mean(cross_val_score(regression, df_inter, y, scoring='r2', cv=crossvalidation))
-full_model
-```
-
-
-
-
-    0.8245917461916372
-
-
-
-## Find the best Lasso regularization parameter
-
-You learned that when using Lasso regularization, your coefficients shrink to 0 when using a higher regularization parameter. Now the question is which value we should choose for the regularization parameter. 
-
-This is where the AIC and BIC come in handy! We'll use both criteria in what follows and perform cross-validation to select an optimal value of the regularization parameter $alpha$ of the Lasso estimator.
-
-Read the page here: https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html and create a similar plot as the first one listed on the page. 
+Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and test data.
 
 
 ```python
-from sklearn.linear_model import Lasso, LassoCV, LassoLarsCV, LassoLarsIC
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+
+print("Train R^2:", lr.score(X_train, y_train))
+print("Test R^2: ", lr.score(X_test, y_test))
 ```
+
+    Train R^2: 0.8571817758242435
+    Test R^2:  0.6442143449157876
+
+
+It looks like we may be overfitting some now. Let's try some feature selection techniques.
+
+## Feature Selection
+
+First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and test $R^2$ score and how many features remain.
 
 
 ```python
-model_bic = LassoLarsIC(criterion='bic')
-model_bic.fit(df_inter, y)
-alpha_bic_ = model_bic.alpha_
+for n in [5, 10, 15, 20, 25]:
+    rfe = RFE(LinearRegression(), n_features_to_select=n)
+    X_rfe_train = rfe.fit_transform(X_train, y_train)
+    X_rfe_test = rfe.transform(X_test)
 
-model_aic = LassoLarsIC(criterion='aic')
-model_aic.fit(df_inter, y)
-alpha_aic_ = model_aic.alpha_
+    lr = LinearRegression()
+    lr.fit(X_rfe_train, y_train)
 
-
-def plot_ic_criterion(model, name, color):
-    alpha_ = model.alpha_
-    alphas_ = model.alphas_
-    criterion_ = model.criterion_
-    plt.plot(-np.log10(alphas_), criterion_, '--', color=color, linewidth=2, label= name)
-    plt.axvline(-np.log10(alpha_), color=color, linewidth=2,
-                label='alpha for %s ' % name)
-    plt.xlabel('-log(alpha)')
-    plt.ylabel('criterion')
-
-plt.figure()
-plot_ic_criterion(model_aic, 'AIC', 'green')
-plot_ic_criterion(model_bic, 'BIC', 'blue')
-plt.legend()
-plt.title('Information-criterion for model selection');
+    print("Train R^2:", lr.score(X_rfe_train, y_train))
+    print("Test R^2: ", lr.score(X_rfe_test, y_test))
+    print(f"Using {n} out of {X_train.shape[1]} features")
+    print()
 ```
 
+    Train R^2: 0.776039994126505
+    Test R^2:  0.6352981725272363
+    Using 5 out of 26 features
+    
+    Train R^2: 0.8191862278324273
+    Test R^2:  0.6743476159860743
+    Using 10 out of 26 features
+    
+    Train R^2: 0.8483321237427194
+    Test R^2:  0.704013767108713
+    Using 15 out of 26 features
+    
+    Train R^2: 0.8495176468836853
+    Test R^2:  0.7169477986870836
+    Using 20 out of 26 features
+    
+    Train R^2: 0.8571732578218183
+    Test R^2:  0.6459291693655327
+    Using 25 out of 26 features
+    
 
-![png](index_files/index_33_0.png)
 
-
-## Analyze the final result
-
-Finally, use the best value for the regularization parameter according to AIC and BIC, and compare $R^2$ and RMSE using train-test split. Compare with the baseline model.
-
-Remember, you can find the Root Mean Squared Error (RMSE) by setting `squared=False` inside the function (see [the documentation](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)), and the RMSE returns values that are in the same units as our target - so we can see how far off our predicted sale prices are in dollars.
+Now test out `Lasso` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)) with several different `alpha` values.
 
 
 ```python
-from sklearn.metrics import mean_squared_error, mean_squared_log_error
-from sklearn.model_selection import train_test_split
+for alpha in [1, 10, 100, 1000, 10000]:
+    lasso = Lasso(alpha=alpha)
+    lasso.fit(X_train, y_train)
+
+    print("Train R^2:", lasso.score(X_train, y_train))
+    print("Test R^2: ", lasso.score(X_test, y_test))
+    print(f"Using {sum(abs(lasso.coef_) < 10**(-10))} out of {X_train.shape[1]} features")
+    print("and an alpha of", alpha)
+    print()
 ```
+
+    Train R^2: 0.857153074119144
+    Test R^2:  0.6485699116355144
+    Using 0 out of 26 features
+    and an alpha of 1
+    
+    Train R^2: 0.8571373079024015
+    Test R^2:  0.6480527180183058
+    Using 0 out of 26 features
+    and an alpha of 10
+    
+    Train R^2: 0.856958744623801
+    Test R^2:  0.6471042867008598
+    Using 1 out of 26 features
+    and an alpha of 100
+    
+    Train R^2: 0.8506404012942795
+    Test R^2:  0.7222278677869791
+    Using 9 out of 26 features
+    and an alpha of 1000
+    
+    Train R^2: 0.7790529223548714
+    Test R^2:  0.7939567393897818
+    Using 14 out of 26 features
+    and an alpha of 10000
+    
+
+
+Compare the results. Which features would you choose to use?
 
 
 ```python
-# Split X_scaled and y into training and test sets
-# Set random_state to 1
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, random_state=1)
+"""
+For RFE the model with the best test R-Squared was using 20 features
 
-# Code for baseline model
-linreg_all = LinearRegression()
-linreg_all.fit(X_train, y_train)
+For Lasso the model with the best test R-Squared was using an alpha of 10000
 
-# Print R-Squared and RMSE
-print('Training R-Squared:', linreg_all.score(X_train, y_train))
-print('Test R-Squared:', linreg_all.score(X_test, y_test))
-print('Training RMSE:', mean_squared_error(y_train, linreg_all.predict(X_train), squared=False))
-print('Test RMSE:', mean_squared_error(y_test, linreg_all.predict(X_test), squared=False))
+The Lasso result was a bit better so let's go with that and the 14 features
+that it selected
+"""
 ```
 
-    Training R-Squared: 0.7478270652928448
-    Test R-Squared: 0.8120708166668684
-    Training RMSE: 39424.15590381302
-    Test RMSE: 35519.17035590487
+## Evaluate Final Model on Validation Data
 
+### Data Preparation
+
+At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the same way that `X_train` and `X_test` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
 
 
 ```python
-# Split df_inter and y into training and test sets
-# Set random_state to 1
-X_train, X_test, y_train, y_test = train_test_split(df_inter, y, random_state=1)
 
-# Code for lasso with alpha from AIC
-lasso = Lasso(alpha= model_aic.alpha_) 
-lasso.fit(X_train, y_train)
+# Scale X_val
+X_val_scaled = scaler.transform(X_val)
+X_val = pd.DataFrame(X_val_scaled, columns=X.columns)
 
-# Print R-Squared and RMSE
-print('Training R-Squared:', lasso.score(X_train, y_train))
-print('Test R-Squared:', lasso.score(X_test, y_test))
-print('Training RMSE:', mean_squared_error(y_train, lasso.predict(X_train), squared=False))
-print('Test RMSE:', mean_squared_error(y_test, lasso.predict(X_test), squared=False))
+# Add interactions to X_val
+for record in top_7_interactions:
+    col1, col2 = record[0]
+    new_col_name = col1 + "_" + col2
+    X_val[new_col_name] = X_val[col1] * X_val[col2]
+
+# Add polynomials to X_val
+for (col, degree, _) in top_polynomials.values:
+    poly = PolynomialFeatures(degree, include_bias=False)
+    col_transformed_val = pd.DataFrame(poly.fit_transform(X_val[[col]]),
+                                        columns=poly.get_feature_names([col]))
+    X_val = pd.concat([X_val.drop(col, axis=1), col_transformed_val], axis=1)
 ```
 
-    Training R-Squared: 0.8446714993955369
-    Test R-Squared: 0.8657420069305382
-    Training RMSE: 30941.3132234915
-    Test RMSE: 30021.734184476485
+### Evaluation
 
+Using either `RFE` or `Lasso`, fit a model on the complete train + test set, then find R-Squared and MSE values for the validation set.
 
 
 ```python
-# Code for lasso with alpha from BIC
-lasso = Lasso(alpha= model_bic.alpha_) 
-lasso.fit(X_train, y_train)
+final_model = Lasso(alpha=10000)
+final_model.fit(pd.concat([X_train, X_test]), pd.concat([y_train, y_test]))
 
-# Print R-Squared and RMSE
-print('Training R-Squared:', lasso.score(X_train, y_train))
-print('Test R-Squared:', lasso.score(X_test, y_test))
-print('Training RMSE:', mean_squared_error(y_train, lasso.predict(X_train), squared=False))
-print('Test RMSE:', mean_squared_error(y_test, lasso.predict(X_test), squared=False))
+print("R-Squared:", final_model.score(X_val, y_val))
+print("MSE:", mean_squared_error(y_val, final_model.predict(X_val)))
 ```
 
-    Training R-Squared: 0.8446487101363189
-    Test R-Squared: 0.8660207515757948
-    Training RMSE: 30943.582941357854
-    Test RMSE: 29990.55263037502
+    R-Squared: 0.7991273457324125
+    MSE: 1407175023.3081572
 
 
-## Level up (Optional)
+## Level Up Ideas (Optional)
 
-### Create a Lasso path
+### Create a Lasso Path
 
-From this section, you know that when using Lasso, more parameters shrink to zero as your regularization parameter goes up. In Scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
+From this section, you know that when using `Lasso`, more parameters shrink to zero as your regularization parameter goes up. In scikit-learn there is a function `lasso_path()` which visualizes the shrinkage of the coefficients while $alpha$ changes. Try this out yourself!
 
 https://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_coordinate_descent_path.html#sphx-glr-auto-examples-linear-model-plot-lasso-coordinate-descent-path-py
 
-### AIC and BIC for subset selection
+### AIC and BIC for Subset Selection
+
 This notebook shows how you can use AIC and BIC purely for feature selection. Try this code out on our Ames housing data!
 
 https://xavierbourretsicotte.github.io/subset_selection.html
 
 ## Summary
 
-Congratulations! You now know how to create better linear models and how to use AIC and BIC for both feature selection and to optimize your regularization parameter when performing Ridge and Lasso. 
+Congratulations! You now know how apply concepts of bias-variance tradeoff using extensions to linear models and feature selection.
