@@ -283,4 +283,4 @@ https://xavierbourretsicotte.github.io/subset_selection.html
 
 ## Summary
 
-Congratulations! You now know how apply concepts of bias-variance tradeoff using extensions to linear models and feature selection.
+Congratulations! You now know how to apply concepts of bias-variance tradeoff using extensions to linear models and feature selection.
