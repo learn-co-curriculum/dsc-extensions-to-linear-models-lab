@@ -51,8 +51,8 @@ y = df['SalePrice']
 X = df.drop(columns='SalePrice')
 
 # Split into train, test, and validation sets
-X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=42)
-X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=0)
 ```
 
 ## Build a Baseline Housing Data Model
@@ -68,9 +68,9 @@ Next steps:
 ```python
 # Your code here
 
-# Scale X_train and X_test using StandardScaler
+# Scale X_train and X_val using StandardScaler
 
-# Ensure X_train and X_test are scaled DataFrames
+# Ensure X_train and X_val are scaled DataFrames
 # (hint: you can set the columns using X.columns)
 
 ```
@@ -106,13 +106,13 @@ Print the 7 interactions that result in the highest $R^2$ scores.
 
 # Find combinations of columns and loop over them
 
-    # Make copies of X_train and X_test
+    # Make copies of X_train and X_val
     
     
     # Add interaction term to data
 
     
-    # Find r-squared score (fit on training data, evaluate on test data)
+    # Find r-squared score (fit on training data, evaluate on validation data)
 
     
     # Append to data structure
@@ -124,7 +124,7 @@ Print the 7 interactions that result in the highest $R^2$ scores.
 
 ### Add the Best Interactions
 
-Write code to include the 7 most important interactions in `X_train` and `X_test` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
+Write code to include the 7 most important interactions in `X_train` and `X_val` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
 
 
 ```python
@@ -136,7 +136,7 @@ Write code to include the 7 most important interactions in `X_train` and `X_test
 
     # Construct new column name
     
-    # Add new column to X_train and X_test
+    # Add new column to X_train and X_val
 
 ```
 
@@ -164,7 +164,7 @@ Once again you should make a data structure that contains the values you have te
 
     # Loop over degrees 2, 3, 4
         
-        # Make a copy of X_train and X_test
+        # Make a copy of X_train and X_val
     
         # Instantiate PolynomialFeatures with relevant degree
         
@@ -176,7 +176,7 @@ Once again you should make a data structure that contains the values you have te
         # Hint: use pd.concat since you're combining two DataFrames
         # Hint: drop the column before combining so it doesn't appear twice
     
-        # Find r-squared score
+        # Find r-squared score on validation
     
         # Append to data structure
 
@@ -198,7 +198,7 @@ If there are duplicate column values in the results above, don't add multiple of
 
     # Create polynomial terms
     
-    # Concat new polynomials to X_train and X_test
+    # Concat new polynomials to X_train and X_val
     
 ```
 
@@ -222,7 +222,7 @@ It looks like we may be overfitting some now. Let's try some feature selection t
 
 ## Feature Selection
 
-First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and test $R^2$ score and how many features remain.
+First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and validation $R^2$ score and how many features remain.
 
 
 ```python
@@ -245,11 +245,11 @@ Compare the results. Which features would you choose to use?
 # Your written answer here
 ```
 
-## Evaluate Final Model on Validation Data
+## Evaluate Final Model on Test Data
 
 ### Data Preparation
 
-At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the same way that `X_train` and `X_test` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
+At the start of this lab, we created `X_test` and `y_test`. Prepare `X_test` the same way that `X_train` and `X_val` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
 
 
 ```python
@@ -259,7 +259,7 @@ At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the sa
 
 ### Evaluation
 
-Using either `RFE` or `Lasso`, fit a model on the complete train + test set, then find R-Squared and MSE values for the validation set.
+Using either `RFE` or `Lasso`, fit a model on the complete train + validation set, then find R-Squared and MSE values for the test set.
 
 
 ```python
