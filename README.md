@@ -1046,7 +1046,7 @@ X_train.head()
 
 ## Full Model R-Squared
 
-Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and test data.
+Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and validation data.
 
 
 ```python
@@ -1178,9 +1178,9 @@ Compare the results. Which features would you choose to use?
 ```python
 # __SOLUTION__
 """
-For RFE the model with the best test R-Squared was using 20 features
+For RFE the model with the best validation R-Squared was using 20 features
 
-For Lasso the model with the best test R-Squared was using an alpha of 10000
+For Lasso the model with the best validation R-Squared was using an alpha of 10000
 
 The Lasso result was a bit better so let's go with that and the 12 features
 that it selected
@@ -1190,7 +1190,7 @@ that it selected
 
 
 
-    "\nFor RFE the model with the best test R-Squared was using 20 features\n\nFor Lasso the model with the best test R-Squared was using an alpha of 10000\n\nThe Lasso result was a bit better so let's go with that and the 12 features\nthat it selected\n"
+    "\nFor RFE the model with the best validation R-Squared was using 20 features\n\nFor Lasso the model with the best validation R-Squared was using an alpha of 10000\n\nThe Lasso result was a bit better so let's go with that and the 12 features\nthat it selected\n"
 
 
 
