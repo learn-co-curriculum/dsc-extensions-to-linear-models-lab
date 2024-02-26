@@ -68,8 +68,8 @@ y = df['SalePrice']
 X = df.drop(columns='SalePrice')
 
 # Split into train, test, and validation sets
-X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=42)
-X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=0)
 ```
 
 
@@ -88,8 +88,8 @@ y = df['SalePrice']
 X = df.drop(columns='SalePrice')
 
 # Split into train, test, and validation sets
-X_train, X_val, y_train, y_val = train_test_split(X, y, random_state=42)
-X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, random_state=0)
 ```
 
 ## Build a Baseline Housing Data Model
@@ -105,9 +105,9 @@ Next steps:
 ```python
 # Your code here
 
-# Scale X_train and X_test using StandardScaler
+# Scale X_train and X_val using StandardScaler
 
-# Ensure X_train and X_test are scaled DataFrames
+# Ensure X_train and X_val are scaled DataFrames
 # (hint: you can set the columns using X.columns)
 
 ```
@@ -116,15 +116,15 @@ Next steps:
 ```python
 # __SOLUTION__
 
-# Scale X_train and X_test using StandardScaler
+# Scale X_train and X_val using StandardScaler
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+X_val_scaled = scaler.transform(X_val)
 
-# Ensure X_train and X_test are scaled DataFrames
+# Ensure X_train and X_val are scaled DataFrames
 # (hint: you can set the columns using X.columns)
 X_train = pd.DataFrame(X_train_scaled, columns=X.columns)
-X_test = pd.DataFrame(X_test_scaled, columns=X.columns)
+X_val = pd.DataFrame(X_val_scaled, columns=X.columns)
 
 X_train
 ```
@@ -331,15 +331,17 @@ X_train
 regression = LinearRegression()
 regression.fit(X_train, y_train)
 
-# Calculate a baseline r-squared score on training data
-baseline = regression.score(X_train, y_train)
-baseline
+# Calculate a baseline r-squared score on training data and validation
+baseline_train = regression.score(X_train, y_train)
+baseline_val = regression.score(X_val, y_val)
+
+baseline_train, baseline_val
 ```
 
 
 
 
-    0.7868344817421309
+    (0.7868344817421309, 0.6375622643038104)
 
 
 
@@ -364,13 +366,13 @@ Print the 7 interactions that result in the highest $R^2$ scores.
 
 # Find combinations of columns and loop over them
 
-    # Make copies of X_train and X_test
+    # Make copies of X_train and X_val
     
     
     # Add interaction term to data
 
     
-    # Find r-squared score (fit on training data, evaluate on test data)
+    # Find r-squared score (fit on training data, evaluate on validation data)
 
     
     # Append to data structure
@@ -392,16 +394,16 @@ interactions = []
 # Find combinations of columns and loop over them
 column_pairs = list(combinations(X_train.columns, 2))
 for (col1, col2) in column_pairs:
-    # Make copies of X_train and X_test
+    # Make copies of X_train and X_val
     features_train = X_train.copy()
-    features_test = X_test.copy()
+    features_val = X_val.copy()
     
     # Add interaction term to data
     features_train["interaction"] = features_train[col1] * features_train[col2]
-    features_test["interaction"] = features_test[col1] * features_test[col2]
+    features_val["interaction"] = features_val[col1] * features_val[col2]
     
     # Find r-squared score (fit on training data, evaluate on test data)
-    score = LinearRegression().fit(features_train, y_train).score(features_test, y_test)
+    score = LinearRegression().fit(features_train, y_train).score(features_val, y_val)
     
     # Append to data structure
     interactions.append(((col1, col2), score))
@@ -413,12 +415,12 @@ print(top_7_interactions)
 ```
 
     Top 7 interactions:
-    [(('LotArea', '1stFlrSF'), 0.7211105666140574), (('LotArea', 'TotalBsmtSF'), 0.7071649207050104), (('LotArea', 'GrLivArea'), 0.6690980823779029), (('LotArea', 'Fireplaces'), 0.6529699515652587), (('2ndFlrSF', 'TotRmsAbvGrd'), 0.647299489040519), (('OverallCond', 'TotalBsmtSF'), 0.6429019879233769), (('OverallQual', '2ndFlrSF'), 0.6422324294284367)]
+    [(('LotArea', '1stFlrSF'), 0.7211105666140569), (('LotArea', 'TotalBsmtSF'), 0.7071649207050108), (('LotArea', 'GrLivArea'), 0.6690980823779027), (('LotArea', 'Fireplaces'), 0.6529699515652585), (('2ndFlrSF', 'TotRmsAbvGrd'), 0.647299489040519), (('OverallCond', 'TotalBsmtSF'), 0.6429019879233769), (('OverallQual', '2ndFlrSF'), 0.6422324294284367)]
 
 
 ### Add the Best Interactions
 
-Write code to include the 7 most important interactions in `X_train` and `X_test` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
+Write code to include the 7 most important interactions in `X_train` and `X_val` by adding 7 columns. Use the naming convention `"col1_col2"`, where `col1` and `col2` are the two columns in the interaction.
 
 
 ```python
@@ -430,7 +432,7 @@ Write code to include the 7 most important interactions in `X_train` and `X_test
 
     # Construct new column name
     
-    # Add new column to X_train and X_test
+    # Add new column to X_train and X_val
 
 ```
 
@@ -446,9 +448,9 @@ for record in top_7_interactions:
     # Construct new column name
     new_col_name = col1 + "_" + col2
     
-    # Add new column to X_train and X_test
+    # Add new column to X_train and X_val
     X_train[new_col_name] = X_train[col1] * X_train[col2]
-    X_test[new_col_name] = X_test[col1] * X_test[col2]
+    X_val[new_col_name] = X_val[col1] * X_val[col2]
     
 X_train
 ```
@@ -745,7 +747,7 @@ Once again you should make a data structure that contains the values you have te
 
     # Loop over degrees 2, 3, 4
         
-        # Make a copy of X_train and X_test
+        # Make a copy of X_train and X_val
     
         # Instantiate PolynomialFeatures with relevant degree
         
@@ -757,7 +759,7 @@ Once again you should make a data structure that contains the values you have te
         # Hint: use pd.concat since you're combining two DataFrames
         # Hint: drop the column before combining so it doesn't appear twice
     
-        # Find r-squared score
+        # Find r-squared score on validation
     
         # Append to data structure
 
@@ -777,9 +779,9 @@ for col in X_train.columns:
     # Loop over degrees 2, 3, 4
     for degree in (2, 3, 4):
         
-        # Make a copy of X_train and X_test
-        features_train = X_train.copy().reset_index()
-        features_test = X_test.copy().reset_index()
+        # Make a copy of X_train and X_val
+        features_train = X_train.copy()
+        features_val = X_val.copy()
     
         # Instantiate PolynomialFeatures with relevant degree
         poly = PolynomialFeatures(degree, include_bias=False)
@@ -788,16 +790,16 @@ for col in X_train.columns:
         # Hint: use the notation df[[column_name]] to get the right shape
         # Hint: convert the result to a DataFrame
         col_transformed_train = pd.DataFrame(poly.fit_transform(features_train[[col]]))
-        col_transformed_test = pd.DataFrame(poly.transform(features_test[[col]]))
+        col_transformed_val = pd.DataFrame(poly.transform(features_val[[col]]))
         
         # Add polynomial to data
         # Hint: use pd.concat since you're combining two DataFrames
         # Hint: drop the column before combining so it doesn't appear twice
         features_train = pd.concat([features_train.drop(col, axis=1), col_transformed_train], axis=1)
-        features_test = pd.concat([features_test.drop(col, axis=1), col_transformed_test], axis=1)
+        features_val = pd.concat([features_val.drop(col, axis=1), col_transformed_val], axis=1)
     
         # Find r-squared score
-        score = LinearRegression().fit(features_train, y_train).score(features_test, y_test)
+        score = LinearRegression().fit(features_train, y_train).score(features_val, y_val)
     
         # Append to data structure
         polynomials.append((col, degree, score))
@@ -809,7 +811,7 @@ print(top_7_polynomials)
 ```
 
     Top 7 polynomials:
-    [('GrLivArea', 3, 0.8283186230750728), ('OverallQual_2ndFlrSF', 3, 0.8221477940922196), ('LotArea_Fireplaces', 4, 0.8124290394772224), ('LotArea_Fireplaces', 3, 0.8122028721735164), ('OverallQual', 3, 0.8068150958879932), ('OverallQual_2ndFlrSF', 2, 0.8057158750082858), ('OverallQual', 4, 0.8033460977380442)]
+    [('GrLivArea', 3, 0.8283344365591123), ('OverallQual_2ndFlrSF', 3, 0.8222074062501774), ('LotArea_Fireplaces', 4, 0.8126598088713186), ('LotArea_Fireplaces', 3, 0.8124111133929935), ('OverallQual', 3, 0.8068023565969222), ('OverallQual_2ndFlrSF', 2, 0.8057607786926376), ('OverallQual', 4, 0.8033455378866856)]
 
 
 ### Add the Best Polynomials
@@ -826,174 +828,35 @@ If there are duplicate column values in the results above, don't add multiple of
 
     # Create polynomial terms
     
-    # Concat new polynomials to X_train and X_test
+    # Concat new polynomials to X_train and X_val
     
 ```
 
 
 ```python
 # __SOLUTION__
+
+# If sklearn version is 1.2 or greater change to .get_feature_names_out()
 # Convert to DataFrame for easier manipulation
 top_polynomials = pd.DataFrame(top_7_polynomials, columns=["Column", "Degree", "R^2"])
 top_polynomials
-```
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Column</th>
-      <th>Degree</th>
-      <th>R^2</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>GrLivArea</td>
-      <td>3</td>
-      <td>0.828319</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>OverallQual_2ndFlrSF</td>
-      <td>3</td>
-      <td>0.822148</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>LotArea_Fireplaces</td>
-      <td>4</td>
-      <td>0.812429</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>LotArea_Fireplaces</td>
-      <td>3</td>
-      <td>0.812203</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>OverallQual</td>
-      <td>3</td>
-      <td>0.806815</td>
-    </tr>
-    <tr>
-      <th>5</th>
-      <td>OverallQual_2ndFlrSF</td>
-      <td>2</td>
-      <td>0.805716</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td>OverallQual</td>
-      <td>4</td>
-      <td>0.803346</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
-# __SOLUTION__
-# Drop duplicate columns
+# Drop duplicate columns based on Column name
 top_polynomials.drop_duplicates(subset="Column", inplace=True)
 top_polynomials
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Column</th>
-      <th>Degree</th>
-      <th>R^2</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>GrLivArea</td>
-      <td>3</td>
-      <td>0.828319</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>OverallQual_2ndFlrSF</td>
-      <td>3</td>
-      <td>0.822148</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>LotArea_Fireplaces</td>
-      <td>4</td>
-      <td>0.812429</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>OverallQual</td>
-      <td>3</td>
-      <td>0.806815</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
-# __SOLUTION__
 
 # Loop over remaining results
 for (col, degree, _) in top_polynomials.values:
-    # Create polynomial terms
+    #Create polynomimal terms
     poly = PolynomialFeatures(degree, include_bias=False)
-    col_transformed_train = pd.DataFrame(poly.fit_transform(X_train[[col]]),
-                                        columns=poly.get_feature_names([col]))
-    col_transformed_test = pd.DataFrame(poly.transform(X_test[[col]]),
-                                    columns=poly.get_feature_names([col]))
-    # Concat new polynomials to X_train and X_test
-    X_train = pd.concat([X_train.drop(col, axis=1), col_transformed_train], axis=1)
-    X_test = pd.concat([X_test.drop(col, axis=1), col_transformed_test], axis=1)
+    train_poly = pd.DataFrame(poly.fit_transform(X_train[[col]]),
+                              columns=poly.get_feature_names([col]))
+    val_poly = pd.DataFrame(poly.transform(X_val[[col]]),
+                              columns=poly.get_feature_names([col]))
     
+    #Concat back to original
+    X_train = pd.concat([X_train.drop(col, axis=1), train_poly], axis=1)
+    X_val = pd.concat([X_val.drop(col, axis=1), val_poly], axis=1)
 ```
 
 Check out your final data set and make sure that your interaction terms as well as your polynomial terms are included.
@@ -1197,18 +1060,18 @@ lr = LinearRegression()
 lr.fit(X_train, y_train)
 
 print("Train R^2:", lr.score(X_train, y_train))
-print("Test R^2: ", lr.score(X_test, y_test))
+print("Validation R^2: ", lr.score(X_val, y_val))
 ```
 
     Train R^2: 0.8571817758242435
-    Test R^2:  0.6442143449157876
+    Validation R^2:  0.6442143449159354
 
 
 It looks like we may be overfitting some now. Let's try some feature selection techniques.
 
 ## Feature Selection
 
-First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and test $R^2$ score and how many features remain.
+First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)) with several different `n_features_to_select` values. For each value, print out the train and validation $R^2$ score and how many features remain.
 
 
 ```python
@@ -1222,35 +1085,35 @@ First, test out `RFE` ([documentation here](https://scikit-learn.org/stable/modu
 for n in [5, 10, 15, 20, 25]:
     rfe = RFE(LinearRegression(), n_features_to_select=n)
     X_rfe_train = rfe.fit_transform(X_train, y_train)
-    X_rfe_test = rfe.transform(X_test)
+    X_rfe_val = rfe.transform(X_val)
 
     lr = LinearRegression()
     lr.fit(X_rfe_train, y_train)
 
     print("Train R^2:", lr.score(X_rfe_train, y_train))
-    print("Test R^2: ", lr.score(X_rfe_test, y_test))
+    print("Test R^2: ", lr.score(X_rfe_val, y_val))
     print(f"Using {n} out of {X_train.shape[1]} features")
     print()
 ```
 
     Train R^2: 0.776039994126505
-    Test R^2:  0.6352981725272363
+    Test R^2:  0.6352981725272361
     Using 5 out of 26 features
     
     Train R^2: 0.8191862278324273
-    Test R^2:  0.6743476159860743
+    Test R^2:  0.6743476159860744
     Using 10 out of 26 features
     
     Train R^2: 0.8483321237427194
-    Test R^2:  0.704013767108713
+    Test R^2:  0.7040137671087123
     Using 15 out of 26 features
     
     Train R^2: 0.8495176468836853
-    Test R^2:  0.7169477986870836
+    Test R^2:  0.716947798687082
     Using 20 out of 26 features
     
     Train R^2: 0.8571732578218183
-    Test R^2:  0.6459291693655327
+    Test R^2:  0.6459291693655236
     Using 25 out of 26 features
     
 
@@ -1271,35 +1134,35 @@ for alpha in [1, 10, 100, 1000, 10000]:
     lasso.fit(X_train, y_train)
 
     print("Train R^2:", lasso.score(X_train, y_train))
-    print("Test R^2: ", lasso.score(X_test, y_test))
-    print(f"Using {sum(abs(lasso.coef_) < 10**(-10))} out of {X_train.shape[1]} features")
+    print("Validation R^2: ", lasso.score(X_val, y_val))
+    print(f"Using { 26 - (sum(abs(lasso.coef_) < 10**(-10)))} out of {X_train.shape[1]} features")
     print("and an alpha of", alpha)
     print()
 ```
 
     Train R^2: 0.857153074119144
-    Test R^2:  0.6485699116355144
-    Using 0 out of 26 features
+    Validation R^2:  0.6485699116355159
+    Using 26 out of 26 features
     and an alpha of 1
     
     Train R^2: 0.8571373079024015
-    Test R^2:  0.6480527180183058
-    Using 0 out of 26 features
+    Validation R^2:  0.6480527180183046
+    Using 26 out of 26 features
     and an alpha of 10
     
     Train R^2: 0.856958744623801
-    Test R^2:  0.6471042867008598
-    Using 1 out of 26 features
+    Validation R^2:  0.6471042867008621
+    Using 25 out of 26 features
     and an alpha of 100
     
-    Train R^2: 0.8506404012942795
-    Test R^2:  0.7222278677869791
-    Using 9 out of 26 features
+    Train R^2: 0.8506404012942794
+    Validation R^2:  0.72222786778698
+    Using 17 out of 26 features
     and an alpha of 1000
     
-    Train R^2: 0.7790529223548714
-    Test R^2:  0.7939567393897818
-    Using 14 out of 26 features
+    Train R^2: 0.7790529223548713
+    Validation R^2:  0.7939567393897815
+    Using 12 out of 26 features
     and an alpha of 10000
     
 
@@ -1319,16 +1182,23 @@ For RFE the model with the best test R-Squared was using 20 features
 
 For Lasso the model with the best test R-Squared was using an alpha of 10000
 
-The Lasso result was a bit better so let's go with that and the 14 features
+The Lasso result was a bit better so let's go with that and the 12 features
 that it selected
 """
 ```
 
-## Evaluate Final Model on Validation Data
+
+
+
+    "\nFor RFE the model with the best test R-Squared was using 20 features\n\nFor Lasso the model with the best test R-Squared was using an alpha of 10000\n\nThe Lasso result was a bit better so let's go with that and the 12 features\nthat it selected\n"
+
+
+
+## Evaluate Final Model on Test Data
 
 ### Data Preparation
 
-At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the same way that `X_train` and `X_test` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
+At the start of this lab, we created `X_test` and `y_test`. Prepare `X_test` the same way that `X_train` and `X_val` have been prepared. This includes scaling, adding interactions, and adding polynomial terms.
 
 
 ```python
@@ -1340,27 +1210,27 @@ At the start of this lab, we created `X_val` and `y_val`. Prepare `X_val` the sa
 ```python
 # __SOLUTION__
 
-# Scale X_val
-X_val_scaled = scaler.transform(X_val)
-X_val = pd.DataFrame(X_val_scaled, columns=X.columns)
+# Scale X_test
+X_test_scaled = scaler.transform(X_test)
+X_test = pd.DataFrame(X_test_scaled, columns=X.columns)
 
-# Add interactions to X_val
+# Add interactions to X_test
 for record in top_7_interactions:
     col1, col2 = record[0]
     new_col_name = col1 + "_" + col2
-    X_val[new_col_name] = X_val[col1] * X_val[col2]
+    X_test[new_col_name] = X_test[col1] * X_test[col2]
 
 # Add polynomials to X_val
 for (col, degree, _) in top_polynomials.values:
     poly = PolynomialFeatures(degree, include_bias=False)
-    col_transformed_val = pd.DataFrame(poly.fit_transform(X_val[[col]]),
+    poly_test = pd.DataFrame(poly.fit_transform(X_test[[col]]),
                                         columns=poly.get_feature_names([col]))
-    X_val = pd.concat([X_val.drop(col, axis=1), col_transformed_val], axis=1)
+    X_test = pd.concat([X_test.drop(col, axis=1), poly_test], axis=1)
 ```
 
 ### Evaluation
 
-Using either `RFE` or `Lasso`, fit a model on the complete train + test set, then find R-Squared and MSE values for the validation set.
+Using either `RFE` or `Lasso`, fit a model on the complete train + validation set, then find R-Squared and MSE values for the test set.
 
 
 ```python
@@ -1372,10 +1242,10 @@ Using either `RFE` or `Lasso`, fit a model on the complete train + test set, the
 ```python
 # __SOLUTION__
 final_model = Lasso(alpha=10000)
-final_model.fit(pd.concat([X_train, X_test]), pd.concat([y_train, y_test]))
+final_model.fit(pd.concat([X_train, X_val]), pd.concat([y_train, y_val]))
 
-print("R-Squared:", final_model.score(X_val, y_val))
-print("MSE:", mean_squared_error(y_val, final_model.predict(X_val)))
+print("R-Squared:", final_model.score(X_test, y_test))
+print("MSE:", mean_squared_error(y_test, final_model.predict(X_test)))
 ```
 
     R-Squared: 0.7991273457324125
