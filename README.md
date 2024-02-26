@@ -211,7 +211,7 @@ Check out your final data set and make sure that your interaction terms as well 
 
 ## Full Model R-Squared
 
-Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and test data.
+Check out the $R^2$ of the full model with your interaction and polynomial terms added. Print this value for both the train and validation data.
 
 
 ```python
